@@ -381,7 +381,10 @@ public class ProfileStatsManager {
             return;
         }
 
-        if (!net.felix.Community.leaderboards.SeasonChangeGate.getInstance().areSeasonUploadsAllowed()) {
+        if (!net.felix.Community.leaderboards.sync.SeasonChangeGate.getInstance().areSeasonUploadsAllowed()) {
+            return;
+        }
+        if (net.felix.Community.leaderboards.reset.PlayerFullReset.blocksCurrentProgress()) {
             return;
         }
 
@@ -452,6 +455,11 @@ public class ProfileStatsManager {
             payload.add("statues", statuesJson);
         }
         
+        String resetId = net.felix.Community.leaderboards.reset.PlayerFullReset.currentUploadResetId();
+        if (resetId != null) {
+            payload.addProperty("resetId", resetId);
+        }
+
         // Wenn Payload leer ist, kein sinnvolles Update
         if (payload.entrySet().isEmpty()) {
             if (isDebugEnabled()) {
@@ -853,6 +861,17 @@ public class ProfileStatsManager {
         cardsStatuesSaveGeneration.incrementAndGet();
         currentBlueprintCount = 0;
         resetAdditiveCounters();
+    }
+
+    /** Löscht die lokalen Höchststände nach einem Spieler-Reset. Spielzeit bleibt. */
+    public void discardLocalHighsAfterPlayerReset() {
+        cardsStatuesSaveGeneration.incrementAndGet();
+        highestFloor = 0;
+        highestWave = 0;
+        maxCoins = 0;
+        maxDamage = 0;
+        currentBlueprintCount = 0;
+        messagesSentSinceUpdate = 0;
     }
 
     private boolean writeCardsStatuesLevels(Map<String, Integer> cardsCopy,

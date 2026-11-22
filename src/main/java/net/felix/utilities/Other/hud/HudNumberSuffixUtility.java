@@ -14,6 +14,7 @@ public final class HudNumberSuffixUtility {
 
     private static final BigDecimal THOUSAND = BigDecimal.valueOf(1000L);
     private static final List<String> SUFFIXES = buildSuffixList();
+    private static final BigDecimal[] MULTIPLIERS = buildMultipliers();
 
     private HudNumberSuffixUtility() {
     }
@@ -34,6 +35,15 @@ public final class HudNumberSuffixUtility {
         return List.copyOf(suffixes);
     }
 
+    private static BigDecimal[] buildMultipliers() {
+        BigDecimal[] multipliers = new BigDecimal[SUFFIXES.size()];
+        multipliers[0] = BigDecimal.ONE;
+        for (int tier = 1; tier < multipliers.length; tier++) {
+            multipliers[tier] = multipliers[tier - 1].multiply(THOUSAND);
+        }
+        return multipliers;
+    }
+
     public static int getSuffixTier(String suffix) {
         if (suffix == null || suffix.isEmpty()) {
             return 0;
@@ -50,7 +60,7 @@ public final class HudNumberSuffixUtility {
         if (tier <= 0) {
             return null;
         }
-        return THOUSAND.pow(tier);
+        return MULTIPLIERS[tier];
     }
 
     /**
@@ -108,13 +118,19 @@ public final class HudNumberSuffixUtility {
         if (value == null || value.compareTo(THOUSAND) < 0) {
             return "";
         }
-        for (int tier = SUFFIXES.size() - 1; tier >= 1; tier--) {
-            BigDecimal multiplier = THOUSAND.pow(tier);
-            if (value.compareTo(multiplier) >= 0) {
-                return SUFFIXES.get(tier);
+        int low = 1;
+        int high = MULTIPLIERS.length - 1;
+        int found = 0;
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            if (value.compareTo(MULTIPLIERS[mid]) >= 0) {
+                found = mid;
+                low = mid + 1;
+            } else {
+                high = mid - 1;
             }
         }
-        return "";
+        return found == 0 ? "" : SUFFIXES.get(found);
     }
 
     public static BigDecimal valuePerSuffixUnit(BigDecimal value, String suffix) {
@@ -122,7 +138,7 @@ public final class HudNumberSuffixUtility {
         if (tier <= 0 || value == null) {
             return value;
         }
-        return value.divide(THOUSAND.pow(tier), 4, RoundingMode.HALF_UP);
+        return value.divide(MULTIPLIERS[tier], 4, RoundingMode.HALF_UP);
     }
 
     public static String formatAbbreviatedValue(BigDecimal value, String suffix) {

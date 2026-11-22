@@ -97,6 +97,7 @@ public final class CollectionTracker {
 					currentBlocks = blocks;
 					sessionBlocks = currentBlocks - initialBlocks;
 				}
+				publishCollectionUnlocks();
 			}
 		} catch (Exception e) {
 			// Silent error handling
@@ -106,6 +107,13 @@ public final class CollectionTracker {
 	/**
 	 * Updates the next collection information based on current blocks
 	 */
+	private static void publishCollectionUnlocks() {
+		if (!biomDetected || currentBiomName == null || currentBlocks < 0) {
+			return;
+		}
+		net.felix.utilities.Farmworld.collections.FarmworldBlueprintUnlocks.apply(currentBiomName, currentBlocks);
+	}
+
 	private static void updateNextCollection() {
 		if (collectionsDatabase.isEmpty()) {
 			blocksNeededForNextCollection = 0;

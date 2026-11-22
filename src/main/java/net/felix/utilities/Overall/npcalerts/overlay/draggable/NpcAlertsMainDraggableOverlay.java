@@ -135,8 +135,19 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         
         final int PADDING = 5;
         final int LINE_HEIGHT = client.font.lineHeight + 2;
-        
-        return (lines.size() * LINE_HEIGHT) + (PADDING * 2);
+        return (lines.size() * LINE_HEIGHT) + ambossRowGaps(lines) * 6 + (PADDING * 2);
+    }
+
+    private static int ambossRowGaps(List<LineWithPercent> lines) {
+        int gaps = 0;
+        LineWithPercent previous = null;
+        for (LineWithPercent line : lines) {
+            if (previous != null && "amboss".equals(previous.configKey) && "amboss".equals(line.configKey)) {
+                gaps++;
+            }
+            previous = line;
+        }
+        return gaps;
     }
 
     @Override
@@ -246,13 +257,18 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
     /** Zeichnet alle Zeilen untereinander, vertikal zentriert im Overlay (gleiche Logik wie im Original). */
     private void drawLines(GuiGraphicsExtractor context, Minecraft client, List<LineWithPercent> lines) {
         int lineHeight = client.font.lineHeight + 2;
-        int totalTextHeight = lines.size() * lineHeight;
+        int totalTextHeight = lines.size() * lineHeight + ambossRowGaps(lines) * 6;
         int overlayCenterY = calculateUnscaledHeight() / 2;
         int currentY = overlayCenterY - totalTextHeight / 2;
 
+        LineWithPercent previous = null;
         for (LineWithPercent line : lines) {
+            if (previous != null && "amboss".equals(previous.configKey) && "amboss".equals(line.configKey)) {
+                currentY += 6;
+            }
             if (line.text == null || line.text.trim().isEmpty()) {
                 currentY += lineHeight;
+                previous = line;
                 continue;
             }
 
@@ -268,6 +284,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
                 lineSpacing += 2; // Zusätzlicher Abstand für Icon-Zeilen
             }
             currentY += lineSpacing;
+            previous = line;
         }
     }
 

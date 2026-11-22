@@ -22,12 +22,12 @@ import net.felix.Community.staff.StaffModerationCommands;
 import net.felix.Community.staff.StaffNameSuggestions;
 import net.felix.Community.staff.StaffPermsCommands;
 import net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility;
-import net.felix.utilities.Other.clipboard.collector.ClipboardAmbossRessourceCollector;
-import net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay;
-import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
 import net.felix.utilities.Other.devtools.DevToolsAccess;
 import net.felix.utilities.Other.devtools.DevToolsScreen;
 import net.felix.utilities.Other.glyphs.ZeichenUtility;
+import net.felix.utilities.Overall.clipboard.collector.ClipboardAmbossRessourceCollector;
+import net.felix.utilities.Overall.clipboard.overlay.ClipboardDraggableOverlay;
+import net.felix.utilities.Overall.clipboard.storage.CollectedMaterialsResourcesStorage;
 import net.felix.utilities.Overall.eventsound.sound.EventSoundPlayer;
 import net.felix.utilities.Overall.eventsound.ui.EventSoundListScreen;
 import net.minecraft.client.Minecraft;
@@ -128,6 +128,8 @@ public class CCLiveCommands {
                         .executes(CCLiveCommands::openIgnoreList))))
             .then(literal("chatrules")
                 .executes(CCLiveCommands::openChatRules))
+            .then(literal("MKs")
+                .executes(CCLiveCommands::openMkOverview))
             .then(literal("report")
                 .then(argument("player", StringArgumentType.word())
                     .executes(context -> submitReport(context, ""))
@@ -522,12 +524,8 @@ public class CCLiveCommands {
         ChatManager chatManager = ChatManager.getInstance();
         
         if (mode.equalsIgnoreCase("cclive")) {
-            if (!chatManager.isShowCCLiveChat()) {
-                context.getSource().sendError(Component.literal("§cCCLive-Chat ist aus — erst mit /cclive chat toggle cclive aktivieren."));
-                return 0;
-            }
-            chatManager.setChatMode(ChatManager.ChatMode.CCLIVE);
-            context.getSource().sendFeedback(Component.literal("§aSchreiben: CCLive"));
+            ChatManager.showDisabledNotice();
+            return 0;
         } else if (mode.equalsIgnoreCase("default")) {
             if (!chatManager.isShowDefaultChat()) {
                 context.getSource().sendError(Component.literal("§cDefault-Chat ist aus — erst mit /cclive chat toggle default aktivieren."));
@@ -550,12 +548,20 @@ public class CCLiveCommands {
     }
 
     private static int openIgnoreList(CommandContext<FabricClientCommandSource> context) {
-        net.felix.Community.chat.ChatIgnoreScreen.open();
+        net.felix.Community.chat.ignore.ChatIgnoreScreen.open();
         return 1;
     }
 
     private static int openChatRules(CommandContext<FabricClientCommandSource> context) {
-        net.felix.Community.chat.ChatRulesScreen.open();
+        net.felix.Community.chat.rules.ChatRulesScreen.open();
+        return 1;
+    }
+
+    private static int openMkOverview(CommandContext<FabricClientCommandSource> context) {
+        net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+        if (client != null) {
+            client.execute(() -> client.gui.setScreen(new net.felix.utilities.Factory.mklevel.ui.MkOverviewScreen()));
+        }
         return 1;
     }
 
@@ -577,8 +583,12 @@ public class CCLiveCommands {
     private static int toggleChat(CommandContext<FabricClientCommandSource> context, String chatType) {
         ChatManager chatManager = ChatManager.getInstance();
         
-        if (!chatType.equalsIgnoreCase("default") && !chatType.equalsIgnoreCase("cclive")) {
-            context.getSource().sendError(Component.literal("§cUngültiger Chat-Typ! Verwende 'default' oder 'cclive'."));
+        if (chatType.equalsIgnoreCase("cclive")) {
+            ChatManager.showDisabledNotice();
+            return 0;
+        }
+        if (!chatType.equalsIgnoreCase("default")) {
+            context.getSource().sendError(Component.literal("§cUngültiger Chat-Typ! Verwende 'default'."));
             return 0;
         }
         
@@ -627,16 +637,10 @@ public class CCLiveCommands {
         context.getSource().sendFeedback(Component.literal("§7  Tab-Completion verfügbar!"));
         context.getSource().sendFeedback(Component.literal(""));
         context.getSource().sendFeedback(Component.literal("§e§lChat Commands:"));
-        context.getSource().sendFeedback(Component.literal("§7/chat <cclive/default> §f- Chat-Modus wechseln"));
-        context.getSource().sendFeedback(Component.literal("§7/cclive chat toggle <default/cclive> §f- Chat-Sichtbarkeit togglen"));
-        context.getSource().sendFeedback(Component.literal("§7/cclive chat export-glyphs §f- Glyph-Sperrliste für den Server exportieren"));
-        context.getSource().sendFeedback(Component.literal("§7/cclive chat ignore list §f- Ignorierte Spieler anzeigen"));
-        context.getSource().sendFeedback(Component.literal("§7/cclive report <spieler> [grund] §f- Spieler im CCLive-Chat melden"));
-        context.getSource().sendFeedback(Component.literal("§7@cclive <nachricht> §f- Direkt in CCLive Chat schreiben"));
-        context.getSource().sendFeedback(Component.literal("§7@global <nachricht> §f- Direkt in Default/Global Chat schreiben"));
+        context.getSource().sendFeedback(Component.literal("§c" + ChatManager.DISABLED_LINE));
+        context.getSource().sendFeedback(Component.literal("§e" + ChatManager.DISABLED_FOLLOWUP));
+        context.getSource().sendFeedback(Component.literal("§7@global <nachricht> §f- Direkt in den Minecraft-Chat schreiben"));
         context.getSource().sendFeedback(Component.literal("§7@lp … §f- Immer in den globalen Minecraft-Chat"));
-        context.getSource().sendFeedback(Component.literal("§7!item §f- Geteiltes Item einfügen (CCLive; sonst → xD)"));
-        context.getSource().sendFeedback(Component.literal("§7!build §f- Geteilten Build einfügen (CCLive; sonst → xD)"));
         context.getSource().sendFeedback(Component.literal(""));
         if (StaffClientAccess.isStaffCommandVisible()) {
             context.getSource().sendFeedback(Component.literal("§e§lModerationstest (Etappe 3, temporär):"));
@@ -818,9 +822,6 @@ public class CCLiveCommands {
             String input = builder.getRemaining().toLowerCase();
             if ("default".startsWith(input)) {
                 builder.suggest("default");
-            }
-            if ("cclive".startsWith(input)) {
-                builder.suggest("cclive");
             }
             return builder.buildFuture();
         };

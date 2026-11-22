@@ -2,6 +2,7 @@ package net.felix.Community.profile;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.util.ArrayList;
 import java.util.List;
 import net.fabricmc.loader.api.FabricLoader;
 import net.felix.CCLiveUtilitiesConfig;
@@ -14,7 +15,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.Identifier;
+
 
 /**
  * Utility zum Anzeigen von Player-Stats in Chat-Nachrichten-Hover-Events
@@ -216,6 +217,10 @@ public class PlayerHoverStatsUtility {
 
             int kaktusrang = extractKaktusrang(originalMessage);
             int seelenrang = extractSeelenrang(originalMessage);
+            if (kaktusrang <= 0) {
+                System.out.println("[CCLive-Rang] " + playerName + " kaktus=0 seele=" + seelenrang
+                        + " hover=" + hoverPreview(originalMessage));
+            }
             cacheRanks(playerName, kaktusrang, seelenrang);
             maybeSyncOwnRanks(playerName, kaktusrang, seelenrang);
             
@@ -288,133 +293,12 @@ public class PlayerHoverStatsUtility {
      * Unterstützt auch verschachtelte extra-Arrays
      */
     private static String extractPlayerNameFromText(Component message) {
-        if (message == null) {
-            return null;
-        }
-        
-        // Durchsuche die Siblings rekursiv
-        List<Component> siblings = message.getSiblings();
-        if (siblings != null && !siblings.isEmpty()) {
-            // Suche nach dem Pattern: Text-Element mit Spielername, dann Icon-Marker (optional), dann ">>"
-            // Gehe durch alle Siblings und prüfe ob das nächste Element ">>" enthält oder Icon-Marker
-            for (int i = 0; i < siblings.size(); i++) {
-                Component current = siblings.get(i);
-                
-                // Prüfe ob das nächste Element ">>" enthält (ignoriere Leerzeichen dazwischen)
-                // Suche in den nächsten Siblings nach ">>" (max. 2 Siblings weiter, um Leerzeichen zu berücksichtigen)
-                for (int j = i + 1; j < siblings.size() && j <= i + 2; j++) {
-                    Component next = siblings.get(j);
-                    String nextText = next.getString();
-                    
-                    // Prüfe ob next ">>" enthält
-                    boolean isArrow = nextText != null && (nextText.contains(">>") || nextText.trim().equals(">>"));
-                    // Prüfe ob next ein Leerzeichen ist und das übernächste ">>" enthält
-                    boolean isSpace = nextText != null && (nextText.trim().isEmpty() || nextText.equals(" "));
-                    boolean hasArrowAfterSpace = isSpace && j + 1 < siblings.size() && 
-                        siblings.get(j + 1).getString() != null && 
-                        (siblings.get(j + 1).getString().contains(">>") || siblings.get(j + 1).getString().trim().equals(">>"));
-                    
-                    if (isArrow || hasArrowAfterSpace) {
-                        // current könnte der Spielername sein
-                        String currentText = current.getString();
-                        if (currentText != null && !currentText.trim().isEmpty()) {
-                            String name = currentText.trim();
-                            // Filtere offensichtlich keine Spielernamen aus
-                            if (name.length() >= 2 && name.length() <= 20 && 
-                                !name.equals(">>") && !name.equals("⸫") && !name.equals("ⶐ") &&
-                                !name.equals(" ") && !name.matches("^\\s*$") &&
-                                !name.equals("⸪") && !name.equals("⸈")) {
-                                return name;
-                            }
-                        }
-                        break; // ">>" gefunden, weiter suchen macht keinen Sinn
-                    }
-                }
-                
-                // WICHTIG: Prüfe auch verschachtelte Strukturen (extra-Arrays)
-                // In verschachtelten Strukturen kann ">>" in einem anderen Sibling sein
-                // Suche nach ">>" in allen nachfolgenden Siblings (auch rekursiv)
-                // Berücksichtige auch Icon-Marker zwischen Name und ">>"
-                for (int j = i + 1; j < siblings.size(); j++) {
-                    Component checkNext = siblings.get(j);
-                    String checkNextText = checkNext.getString();
-                    boolean isArrow = checkNextText != null && (checkNextText.contains(">>") || checkNextText.trim().equals(">>"));
-                    // Prüfe ob checkNext ein Leerzeichen ist und das nächste Element ">>" enthält
-                    boolean isSpace = checkNextText != null && (checkNextText.trim().isEmpty() || checkNextText.equals(" "));
-                    boolean hasArrowAfterSpace = isSpace && j + 1 < siblings.size() && 
-                        siblings.get(j + 1).getString() != null && 
-                        (siblings.get(j + 1).getString().contains(">>") || siblings.get(j + 1).getString().trim().equals(">>"));
-                    
-                    if (isArrow || hasArrowAfterSpace) {
-                        // Found ">>" - check if current contains a valid name
-                        String currentText = current.getString();
-                        if (currentText != null && !currentText.trim().isEmpty()) {
-                            String name = currentText.trim();
-                            if (name.length() >= 2 && name.length() <= 20 && 
-                                !name.equals(">>") && !name.equals("⸫") && !name.equals("ⶐ") &&
-                                !name.equals(" ") && !name.matches("^\\s*$") &&
-                                !name.equals("⸪") && !name.equals("⸈")) {
-                                return name;
-                            }
-                        }
-                        // Also check siblings between current and ">>" (ignoriere Leerzeichen)
-                        for (int k = i + 1; k < j; k++) {
-                            Component between = siblings.get(k);
-                            String betweenText = between.getString();
-                            if (betweenText != null && !betweenText.trim().isEmpty()) {
-                                String name = betweenText.trim();
-                                if (name.length() >= 2 && name.length() <= 20 && 
-                                    !name.equals(">>") && !name.equals("⸫") && !name.equals("ⶐ") &&
-                                    !name.equals(" ") && !name.matches("^\\s*$") &&
-                                    !name.equals("⸪") && !name.equals("⸈") &&
-                                    !name.equals(" ")) {
-                                    return name;
-                                }
-                            }
-                        }
-                        break; // Found ">>", stop searching
-                    }
-                }
-                
-                // Rekursiv in Siblings suchen (wichtig für verschachtelte Strukturen)
-                String found = extractPlayerNameFromText(current);
-                if (found != null) {
-                    return found;
-                }
-            }
-        }
-        
-        // Prüfe auch den Haupttext selbst als Fallback (für einfache String-Nachrichten)
-        String mainText = message.getString();
-        if (mainText != null && mainText.contains(">>")) {
-            // Versuche Pattern-Matching als Fallback
-            // Format: "firestarter03 >> Hallo Welt" oder ähnlich
-            String[] parts = mainText.split(">>", 2); // Split nur beim ersten ">>"
-            if (parts.length > 0) {
-                String beforeArrow = parts[0].trim();
-                // Extrahiere den letzten "Wort" vor ">>"
-                // Entferne Farbcodes zuerst
-                beforeArrow = beforeArrow.replaceAll("§[0-9a-fk-or]", "");
-                String[] words = beforeArrow.split("\\s+");
-                if (words.length > 0) {
-                    // Nimm das letzte Wort (das sollte der Spielername sein)
-                    String candidate = words[words.length - 1].trim();
-                    // Entferne nur wirklich problematische Sonderzeichen, behalte Zahlen
-                    // Spielernamen können Zahlen enthalten (z.B. "firestarter03")
-                    candidate = candidate.replaceAll("[^a-zA-Z0-9_]", "");
-                    if (candidate.length() >= 2 && candidate.length() <= 20) {
-                        return candidate;
-                    }
-                }
-            }
-        }
-        
-        return null;
+        return message == null ? null
+                : net.felix.Community.chat.share.ChatShareTexts.senderName(message.getString());
     }
-    
+
     // Glyphe als Marker für das Icon (Cyrillic letter fita - ѳ)
     // Font-Identifier für die Custom-Font
-    private static final Identifier CUSTOM_FONT = Identifier.fromNamespaceAndPath("cclive-utilities", "default");
     
     /**
      * Fügt das Mod-Icon zwischen Spielername und >> ein
@@ -431,128 +315,147 @@ public class PlayerHoverStatsUtility {
             return message;
         }
         
-        try {
-            // Icon-Marker bereits vorhanden → nichts ändern
-            if (net.felix.Community.playericon.PlayerIconUtility.containsChatIconMarker(message.getString())) {
-                return message;
-            }
-
-            List<Component> siblings = message.getSiblings();
-            if (siblings == null || siblings.isEmpty()) {
-                return message;
-            }
-            
-            // Durchsuche die Siblings und finde den Namen vor ">>"
-            for (int i = 0; i < siblings.size(); i++) {
-                Component current = siblings.get(i);
-                String currentText = current.getString();
-                
-                // Prüfe ob current den Spielernamen enthält
-                if (currentText != null && currentText.trim().equals(playerName)) {
-                    // Suche nach ">>" in nachfolgenden Siblings (Leerzeichen dazwischen sind ok)
-                    for (int j = i + 1; j < siblings.size(); j++) {
-                        Component checkNext = siblings.get(j);
-                        String checkNextText = checkNext.getString();
-                        
-                        boolean isArrow = checkNextText != null && (checkNextText.contains(">>") || checkNextText.trim().equals(">>"));
-                        boolean isSpace = checkNextText != null && checkNextText.trim().isEmpty() && checkNextText.contains(" ");
-                        
-                        if (isArrow || (isSpace && j + 1 < siblings.size() && siblings.get(j + 1).getString() != null && siblings.get(j + 1).getString().contains(">>"))) {
-                            // Index des ">>"-Siblings (bei Space+Arrow ist Arrow bei j+1)
-                            int arrowIndex = isArrow ? j : j + 1;
-
-                            // Bereits Icon zwischen Name und >>?
-                            for (int k = i + 1; k < arrowIndex; k++) {
-                                String between = siblings.get(k).getString();
-                                if (net.felix.Community.playericon.PlayerIconUtility.containsChatIconMarker(between)) {
-                                    return message;
-                                }
-                            }
-
-                            MutableComponent newMessage = message.copy();
-                            newMessage.getSiblings().clear();
-                            
-                            // Alles bis inkl. Name
-                            for (int k = 0; k <= i; k++) {
-                                newMessage.append(siblings.get(k));
-                            }
-
-                            // Space + Icon-Glyphe (Font rendert das Icon an der korrekten Chat-Position)
-                            MutableComponent space = Component.literal(" ").setStyle(current.getStyle());
-                            Style iconStyle = current.getStyle()
-                                .withFont(new net.minecraft.network.chat.FontDescription.Resource(CUSTOM_FONT))
-                                .withColor(0xFFFFFF);
-                            MutableComponent iconMarker = Component.literal(String.valueOf(
-                                net.felix.Community.playericon.PlayerIconUtility.chatIconMarker(playerName)
-                            )).setStyle(iconStyle);
-                            newMessage.append(space);
-                            newMessage.append(iconMarker);
-
-                            // Rest ab ">>" (vorangehende Leerzeichen überspringen, Icon ersetzt den Abstand)
-                            for (int k = arrowIndex; k < siblings.size(); k++) {
-                                newMessage.append(siblings.get(k));
-                            }
-                            
-                            return newMessage;
-                        }
-                    }
-                }
-            }
-            
-            // Rekursiv in Siblings suchen
-            for (Component sibling : siblings) {
-                Component modified = insertIconBetweenNameAndArrow(sibling, playerName);
-                if (modified != sibling) {
-                    // Icon wurde eingefügt - erstelle neue Struktur
-                    MutableComponent newMessage = message.copy();
-                    newMessage.getSiblings().clear();
-                    for (Component s : siblings) {
-                        if (s == sibling) {
-                            newMessage.append(modified);
-                        } else {
-                            newMessage.append(s);
-                        }
-                    }
-                    return newMessage;
-                }
-            }
-            
-            return message;
-        } catch (Exception e) {
-            // Bei Fehler: Original-Nachricht zurückgeben
-            return message;
-        }
+        return net.felix.Community.chat.ChatLineIcons.add(message, playerName);
     }
-    
-    /**
-     * Modifiziert einen Text mit einem neuen Hover-Event
-     * Kopiert von HoverEventFactory.modifyTextWithHoverEvent
+
+
+/**
+     * Stats-Hover nur bis einschließlich {@code >>}.
+     * Ein Hover am Elternteil gilt in Minecraft auch für alle Kinder, deshalb wird die Zeile
+     * an {@code >>} auseinandergenommen. Der Datumsbaustein behält sein eigenes Hover.
      */
     private static Component modifyTextWithHoverEvent(Component text, HoverEvent newHoverEvent) {
         if (text == null || newHoverEvent == null) {
             return text;
         }
-        
-        // Copy the text to preserve its structure - copy() returns MutableComponent which has setStyle()
-        MutableComponent newText = text.copy();
-        
-        // Check if this text component has a hover event that needs to be replaced
-        net.minecraft.network.chat.Style currentStyle = text.getStyle();
-        if (currentStyle != null && currentStyle.getHoverEvent() != null) {
-            // This text has a hover event - replace it with the new one
-            net.minecraft.network.chat.Style newStyle = currentStyle.withHoverEvent(newHoverEvent);
-            newText.setStyle(newStyle);
+        return applyStatsHoverUntilArrow(text, newHoverEvent);
+    }
+
+    static Component applyStatsHoverUntilArrow(Component text, HoverEvent statsHover) {
+        if (text == null || statsHover == null) {
+            return text;
         }
-        // If no hover event, the style is already preserved by copy()
-        
-        // Recursively process all siblings to preserve their formatting
-        newText.getSiblings().clear(); // Clear existing siblings to avoid duplication
+        List<StyledRun> runs = new ArrayList<>();
+        collectRuns(text, Style.EMPTY, runs);
+        int arrowEnd = -1;
+        int cursor = 0;
+        for (StyledRun run : runs) {
+            int at = run.text.indexOf(">>");
+            if (at >= 0) {
+                arrowEnd = cursor + at + 2;
+                break;
+            }
+            cursor += run.text.length();
+        }
+        if (arrowEnd < 0) {
+            return replaceEveryHover(text, statsHover);
+        }
+        MutableComponent out = Component.empty();
+        cursor = 0;
+        for (StyledRun run : runs) {
+            int runEnd = cursor + run.text.length();
+            Style style = run.style == null ? Style.EMPTY : run.style;
+            if (isDateRun(run.text, style)) {
+                appendRun(out, run.text, style);
+            } else if (runEnd <= arrowEnd) {
+                Style next = style.getHoverEvent() != null ? style.withHoverEvent(statsHover) : style;
+                appendRun(out, run.text, next);
+            } else if (cursor >= arrowEnd) {
+                appendRun(out, run.text, style.withHoverEvent(null));
+            } else {
+                int cut = arrowEnd - cursor;
+                Style prefix = style.getHoverEvent() != null ? style.withHoverEvent(statsHover) : style;
+                appendRun(out, run.text.substring(0, cut), prefix);
+                appendRun(out, run.text.substring(cut), style.withHoverEvent(null));
+            }
+            cursor = runEnd;
+        }
+        return out;
+    }
+
+    private record StyledRun(String text, Style style) {
+    }
+
+    private static void collectRuns(Component component, Style parent, List<StyledRun> runs) {
+        if (component == null) {
+            return;
+        }
+        Style own = component.getStyle() == null ? Style.EMPTY : component.getStyle();
+        Style merged = own.applyTo(parent);
+        String text = ownLiteral(component);
+        if (text == null) {
+            text = "";
+        }
+        boolean keepEmpty = text.isEmpty()
+                && (merged.getInsertion() != null || merged.getClickEvent() != null);
+        if (!text.isEmpty() || keepEmpty) {
+            runs.add(new StyledRun(text, merged));
+        }
+        for (Component sibling : component.getSiblings()) {
+            collectRuns(sibling, merged, runs);
+        }
+    }
+
+    private static void appendRun(MutableComponent out, String text, Style style) {
+        if (text == null || text.isEmpty()) {
+            if (style != null && (style.getHoverEvent() != null || style.getInsertion() != null || style.getClickEvent() != null)) {
+                out.append(Component.empty().setStyle(style));
+            }
+            return;
+        }
+        out.append(Component.literal(text).setStyle(style == null ? Style.EMPTY : style));
+    }
+
+    private static boolean isDateRun(String text, Style style) {
+        if (text != null && !text.isEmpty() || style == null) {
+            return false;
+        }
+        String insertion = style.getInsertion();
+        if (insertion == null || insertion.length() != 13) {
+            return false;
+        }
+        for (int i = 0; i < insertion.length(); i++) {
+            char ch = insertion.charAt(i);
+            if (ch < '0' || ch > '9') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static Component replaceEveryHover(Component text, HoverEvent statsHover) {
+        if (text == null) {
+            return null;
+        }
+        MutableComponent copy = text.copy();
+        Style current = text.getStyle();
+        if (current != null && current.getHoverEvent() != null && !isDateRun(ownLiteral(text), current)) {
+            copy.setStyle(current.withHoverEvent(statsHover));
+        }
+        copy.getSiblings().clear();
         for (Component sibling : text.getSiblings()) {
-            Component modifiedSibling = modifyTextWithHoverEvent(sibling, newHoverEvent);
-            newText.getSiblings().add(modifiedSibling);
+            copy.append(replaceEveryHover(sibling, statsHover));
         }
-        
-        return newText;
+        return copy;
+    }
+
+    private static String ownLiteral(Component component) {
+        String full = component.getString();
+        if (full == null) {
+            return "";
+        }
+        StringBuilder siblings = new StringBuilder();
+        for (Component sibling : component.getSiblings()) {
+            String part = sibling.getString();
+            if (part != null) {
+                siblings.append(part);
+            }
+        }
+        String suffix = siblings.toString();
+        if (!suffix.isEmpty() && full.endsWith(suffix)) {
+            return full.substring(0, full.length() - suffix.length());
+        }
+        return component.getSiblings().isEmpty() ? full : "";
     }
     
     /**
@@ -740,218 +643,120 @@ public class PlayerHoverStatsUtility {
         }
     }
     
+    /** [Kaktusrang] 377 und [Kaktusrang]: 1,234 */
+    private static final java.util.regex.Pattern CACTUS_RANK_PATTERN =
+        java.util.regex.Pattern.compile("\\[Kaktusrang\\]:?\\s*([\\d,]+)");
+    /** [Seelenrang] 323 und [Seelenrang]: 1,234 */
+    private static final java.util.regex.Pattern SOUL_RANK_PATTERN =
+        java.util.regex.Pattern.compile("\\[Seelenrang\\]:?\\s*([\\d,]+)");
+
     /**
-     * Extrahiert den Kaktusrang aus dem bestehenden Hover-Text
-     * Format: [Kaktusrang]: x
+     * Liest den Kaktusrang aus jedem Show-Text-Hover der Nachricht.
+     * Der Datums-Hover steht vor dem Spielerhover und wird übersprungen.
      */
-    private static int extractKaktusrang(Component message) {
-        if (message == null) {
+    static int extractKaktusrang(Component message) {
+        return extractRank(message, CACTUS_RANK_PATTERN);
+    }
+
+    /**
+     * Liest den Seelenrang aus jedem Show-Text-Hover der Nachricht.
+     */
+    static int extractSeelenrang(Component message) {
+        return extractRank(message, SOUL_RANK_PATTERN);
+    }
+
+    private static int extractRank(Component message, java.util.regex.Pattern pattern) {
+        if (message == null || pattern == null) {
             return 0;
         }
-        
-        boolean debugging = CCLiveUtilitiesConfig.HANDLER.instance().playerStatsDebugging;
-        
-        // Finde Hover-Event
-        HoverEvent hoverEvent = findHoverEventInText(message);
-        if (hoverEvent == null || hoverEvent.action() != HoverEvent.Action.SHOW_TEXT) {
-            if (debugging) {
-                // Silent error handling("[PlayerHoverStats] ⚠️ extractKaktusrang: Kein HoverEvent gefunden");
+        for (Component hoverText : showTextHovers(message)) {
+            String cleaned = plainHover(hoverText);
+            java.util.regex.Matcher matcher = pattern.matcher(cleaned);
+            if (!matcher.find()) {
+                continue;
             }
-            return 0;
-        }
-        
-        // Extrahiere Hover-Text
-        Component hoverText = extractHoverTextFromEvent(hoverEvent);
-        if (hoverText == null) {
-            if (debugging) {
-                // Silent error handling("[PlayerHoverStats] ⚠️ extractKaktusrang: HoverText ist null");
-            }
-            return 0;
-        }
-        
-        // Konvertiere zu String (inklusive Siblings)
-        String hoverString = getFullTextString(hoverText);
-        if (hoverString == null || hoverString.isEmpty()) {
-            if (debugging) {
-                // Silent error handling("[PlayerHoverStats] ⚠️ extractKaktusrang: HoverString ist null oder leer");
-            }
-            return 0;
-        }
-        
-        if (debugging) {
-            // Silent error handling("[PlayerHoverStats] 🔍 extractKaktusrang: HoverString = '" + hoverString + "'");
-        }
-        
-        // Entferne Farbcodes (§ gefolgt von einem Zeichen)
-        String cleanedString = hoverString.replaceAll("§[0-9a-fk-or]", "");
-        if (debugging) {
-            // Silent error handling("[PlayerHoverStats] 🔍 extractKaktusrang: CleanedString = '" + cleanedString + "'");
-        }
-        
-        // Suche nach [Kaktusrang]: x (unterstützt auch Kommas als Tausendertrennzeichen)
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\[Kaktusrang\\]:\\s*([\\d,]+)");
-        java.util.regex.Matcher matcher = pattern.matcher(cleanedString);
-        if (matcher.find()) {
             try {
-                // Entferne Kommas (Tausendertrennzeichen) vor dem Parsen
-                String numberString = matcher.group(1).replace(",", "");
-                int value = Integer.parseInt(numberString);
-                if (debugging) {
-                    // Silent error handling("[PlayerHoverStats] ✅ extractKaktusrang: " + value);
-                }
-                return value;
+                return Integer.parseInt(matcher.group(1).replace(",", ""));
             } catch (NumberFormatException e) {
-                if (debugging) {
-                    // Silent error handling("[PlayerHoverStats] ⚠️ extractKaktusrang: NumberFormatException: " + e.getMessage());
-                }
                 return 0;
             }
         }
-        
-        if (debugging) {
-            // Silent error handling("[PlayerHoverStats] ⚠️ extractKaktusrang: Pattern nicht gefunden");
-        }
         return 0;
     }
-    
-    /**
-     * Extrahiert den Seelenrang aus dem bestehenden Hover-Text
-     * Format: [Seelenrang]: x
-     */
-    private static int extractSeelenrang(Component message) {
-        if (message == null) {
-            return 0;
-        }
-        
-        boolean debugging = CCLiveUtilitiesConfig.HANDLER.instance().playerStatsDebugging;
-        
-        // Finde Hover-Event
-        HoverEvent hoverEvent = findHoverEventInText(message);
-        if (hoverEvent == null || hoverEvent.action() != HoverEvent.Action.SHOW_TEXT) {
-            if (debugging) {
-                // Silent error handling("[PlayerHoverStats] ⚠️ extractSeelenrang: Kein HoverEvent gefunden");
-            }
-            return 0;
-        }
-        
-        // Extrahiere Hover-Text
-        Component hoverText = extractHoverTextFromEvent(hoverEvent);
-        if (hoverText == null) {
-            if (debugging) {
-                // Silent error handling("[PlayerHoverStats] ⚠️ extractSeelenrang: HoverText ist null");
-            }
-            return 0;
-        }
-        
-        // Konvertiere zu String (inklusive Siblings)
-        String hoverString = getFullTextString(hoverText);
-        if (hoverString == null || hoverString.isEmpty()) {
-            if (debugging) {
-                // Silent error handling("[PlayerHoverStats] ⚠️ extractSeelenrang: HoverString ist null oder leer");
-            }
-            return 0;
-        }
-        
-        if (debugging) {
-            // Silent error handling("[PlayerHoverStats] 🔍 extractSeelenrang: HoverString = '" + hoverString + "'");
-        }
-        
-        // Entferne Farbcodes (§ gefolgt von einem Zeichen)
-        String cleanedString = hoverString.replaceAll("§[0-9a-fk-or]", "");
-        if (debugging) {
-            // Silent error handling("[PlayerHoverStats] 🔍 extractSeelenrang: CleanedString = '" + cleanedString + "'");
-        }
-        
-        // Suche nach [Seelenrang]: x (unterstützt auch Kommas als Tausendertrennzeichen)
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\[Seelenrang\\]:\\s*([\\d,]+)");
-        java.util.regex.Matcher matcher = pattern.matcher(cleanedString);
-        if (matcher.find()) {
-            try {
-                // Entferne Kommas (Tausendertrennzeichen) vor dem Parsen
-                String numberString = matcher.group(1).replace(",", "");
-                int value = Integer.parseInt(numberString);
-                if (debugging) {
-                    // Silent error handling("[PlayerHoverStats] ✅ extractSeelenrang: " + value);
-                }
-                return value;
-            } catch (NumberFormatException e) {
-                if (debugging) {
-                    // Silent error handling("[PlayerHoverStats] ⚠️ extractSeelenrang: NumberFormatException: " + e.getMessage());
-                }
-                return 0;
-            }
-        }
-        
-        if (debugging) {
-            // Silent error handling("[PlayerHoverStats] ⚠️ extractSeelenrang: Pattern nicht gefunden");
-        }
-        return 0;
+
+    private static java.util.List<Component> showTextHovers(Component text) {
+        java.util.List<Component> found = new java.util.ArrayList<>();
+        collectShowTextHovers(text, found);
+        return found;
     }
-    
-    /**
-     * Konvertiert einen Text (inklusive aller Siblings) zu einem vollständigen String
-     */
-    private static String getFullTextString(Component text) {
+
+    private static void collectShowTextHovers(Component text, java.util.List<Component> found) {
         if (text == null) {
-            return "";
+            return;
         }
-        
-        StringBuilder sb = new StringBuilder();
-        
-        // Füge den Haupttext hinzu
-        String mainText = text.getString();
-        if (mainText != null) {
-            sb.append(mainText);
-        }
-        
-        // Füge alle Siblings hinzu
-        for (Component sibling : text.getSiblings()) {
-            String siblingText = getFullTextString(sibling);
-            if (siblingText != null && !siblingText.isEmpty()) {
-                sb.append(siblingText);
-            }
-        }
-        
-        return sb.toString();
-    }
-    
-    /**
-     * Findet ein HoverEvent in einem Text rekursiv
-     */
-    private static HoverEvent findHoverEventInText(Component text) {
-        if (text == null) {
-            return null;
-        }
-        
-        // Prüfe den Haupttext
         if (text.getStyle() != null) {
             HoverEvent hoverEvent = text.getStyle().getHoverEvent();
             if (hoverEvent != null && hoverEvent.action() == HoverEvent.Action.SHOW_TEXT) {
-                return hoverEvent;
+                Component hoverText = extractHoverTextFromEvent(hoverEvent);
+                if (hoverText != null) {
+                    found.add(hoverText);
+                }
             }
         }
-        
-        // Rekursiv in Siblings suchen
         for (Component sibling : text.getSiblings()) {
-            HoverEvent found = findHoverEventInText(sibling);
-            if (found != null) {
-                return found;
-            }
+            collectShowTextHovers(sibling, found);
         }
-        
-        return null;
     }
     
     /**
      * Extrahiert Text aus einem HoverEvent
      * Nutzt umfassende Logik ähnlich wie InformationenUtility
      */
+    private static String hoverPreview(Component message) {
+        StringBuilder out = new StringBuilder();
+        int shown = 0;
+        for (Component hoverText : showTextHovers(message)) {
+            if (shown++ >= 3) {
+                break;
+            }
+            String plain = plainHover(hoverText).replace('\n', '|');
+            if (plain.length() > 180) {
+                plain = plain.substring(0, 180);
+            }
+            if (out.length() > 0) {
+                out.append(" || ");
+            }
+            out.append(plain);
+        }
+        return out.isEmpty() ? "(kein Show-Text)" : out.toString();
+    }
+
+    /** Klartext des PlayLegend-Hovers, Custom-Font-Ziffern in ASCII. */
+    private static String plainHover(Component hoverText) {
+        String raw = hoverText == null ? "" : hoverText.getString();
+        if (raw == null) {
+            raw = "";
+        }
+        try {
+            String decoded = net.felix.utilities.Other.glyphs.ZeichenUtility.decodeTabWidgetText(raw);
+            if (decoded != null) {
+                raw = decoded;
+            }
+        } catch (Throwable ignored) {
+            // Schrift ist beim Lesen der Zeile noch nicht da.
+        }
+        return raw.replaceAll("§[0-9a-fk-or]", "");
+    }
+
     private static Component extractHoverTextFromEvent(HoverEvent hoverEvent) {
+        if (hoverEvent instanceof HoverEvent.ShowText showText) {
+            return showText.value();
+        }
         if (hoverEvent == null || hoverEvent.action() != HoverEvent.Action.SHOW_TEXT) {
             return null;
         }
         
-        boolean debugging = CCLiveUtilitiesConfig.HANDLER.instance().playerStatsDebugging;
+        boolean debugging = false;
         
         // Versuche getValue() Methode
         try {

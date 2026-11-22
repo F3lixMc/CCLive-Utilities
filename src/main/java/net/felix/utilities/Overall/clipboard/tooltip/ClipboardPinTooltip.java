@@ -1,0 +1,86 @@
+package net.felix.utilities.Overall.clipboard.tooltip;
+
+import java.util.List;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+
+/**
+ * Pin-Eingabe im Tooltip fuer Schmiede-Inventare.
+ */
+public final class ClipboardPinTooltip {
+
+	private static final java.util.regex.Pattern ACTION_LINE_PATTERN = java.util.regex.Pattern.compile(
+			"\\[Linksklick\\]\\s*:?\\s*(Herstellen|Kaufen)", java.util.regex.Pattern.CASE_INSENSITIVE);
+
+	private ClipboardPinTooltip() {
+	}
+
+	/**
+	 * Adds floor number to blueprint names in inventory tooltips
+	 * Format: "BAUPLAN NAME - [Bauplan] [eX]" where X is the floor number (at the end)
+	 */
+	/**
+	 * Fügt "Bauplan Anpinnen mit Hotkey: [Hotkey]" Text zu Tooltips in Bauplan-Inventaren hinzu
+	 * Wird über "[Linksklick]: Herstellen" oder "[Linksklick] Kaufen" eingefügt
+	 * Verwendet den gleichen Text wie im ItemViewer-Tooltip
+	 */
+	public static void addClipboardPinTextToTooltip(List<Component> lines, Minecraft client) {
+		// Performance-Optimierung: Frühe Returns
+		if (lines == null || lines.isEmpty() || client == null) {
+			return;
+		}
+		
+		if (client.gui.screen() == null) {
+			return;
+		}
+		
+		// Prüfe ob wir in einem Bauplan-Inventar sind (Baupläne [Waffen], Bauplan [Shop], etc.)
+		String screenTitle = client.gui.screen().getTitle().getString();
+		String cleanScreenTitle = screenTitle.replaceAll("§[0-9a-fk-or]", "")
+											.replaceAll("[\\u3400-\\u4DBF]", "");
+		
+		// Prüfe auf Bauplan-Inventare (Baupläne [Waffen], Baupläne [Rüstung], Bauplan [Shop], etc.)
+		boolean isInBlueprintInventory = cleanScreenTitle.contains("Baupläne [Waffen]") ||
+										 cleanScreenTitle.contains("Baupläne [Rüstung]") ||
+										 cleanScreenTitle.contains("Baupläne [Werkzeuge]") ||
+										 cleanScreenTitle.contains("Bauplan [Shop]") ||
+										 cleanScreenTitle.contains("Favorisierte [Rüstungsbaupläne]") ||
+										 cleanScreenTitle.contains("Favorisierte [Waffenbaupläne]") ||
+										 cleanScreenTitle.contains("Favorisierte [Werkzeugbaupläne]") ||
+										 cleanScreenTitle.contains("Favorisierte [Shop-Baupläne]") ||
+										 cleanScreenTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools");
+		
+		if (!isInBlueprintInventory) {
+			return;
+		}
+		
+		// Hole den Hotkey-Text vom ItemViewer (gleicher Text wie im ItemViewer-Tooltip)
+        String hotkeyText = net.felix.utilities.Overall.itemviewer.ItemViewerHotkeys.getClipboardPinHotkeyText();
+        String clipboardText = "An Pinnwand anheften mit Hotkey: " + hotkeyText;
+		
+		// Durchsuche Tooltip-Zeilen nach "[Linksklick]: Herstellen" oder "[Linksklick] Kaufen"
+		for (int i = 0; i < lines.size(); i++) {
+			Component line = lines.get(i);
+			String lineText = line.getString();
+			
+			if (lineText == null) {
+				continue;
+			}
+			
+			// Entferne Formatierungs-Codes für Vergleich
+			String cleanLineText = lineText.replaceAll("§[0-9a-fk-or]", "")
+					.replaceAll("[\\u3400-\\u4DBF\\uE000-\\uF8FF]", "");
+			
+			// Prüfe ob die Zeile "[Linksklick]: Herstellen" oder "[Linksklick] Kaufen" enthält
+			// (Doppelpunkt und Leerzeichen tolerant)
+			if (ACTION_LINE_PATTERN.matcher(cleanLineText).find()) {
+				// Füge leere Zeile und "Bauplan Anpinnen mit Hotkey: [Hotkey]" in grau hinzu, direkt vor dieser Zeile
+				lines.add(i, Component.empty()); // Leere Zeile
+				lines.add(i + 1, Component.literal(clipboardText)
+					.setStyle(Style.EMPTY.withColor(0xFF808080).withItalic(false))); // Grau
+				return; // Nur einmal einfügen
+			}
+		}
+	}
+}

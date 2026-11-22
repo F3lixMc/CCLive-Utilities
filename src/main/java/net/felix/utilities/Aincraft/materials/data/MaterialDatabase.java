@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static net.felix.utilities.Aincraft.materials.data.PrismarinMaterials.getPrismarinMaterialFloorInfo;
 import static net.felix.utilities.Farmworld.fishing.ponds.FishingMaterials.getFishingMaterialFloorInfo;
@@ -20,6 +21,8 @@ public final class MaterialDatabase {
 
 	// Materials tracking
 	public static Map<String, MaterialInfo> materialsDatabase = new HashMap<>();
+	/** Steigt nach jedem vollständigen Laden, damit Tooltip-Caches verworfen werden. */
+	public static final AtomicInteger databaseGeneration = new AtomicInteger();
 
 	/**
 	 * Loads the materials database from materials.json
@@ -85,6 +88,7 @@ public final class MaterialDatabase {
 		} catch (Exception e) {
 			// Silent error handling
 		}
+		databaseGeneration.incrementAndGet();
 	}
 
 	/**
@@ -117,5 +121,6 @@ public final class MaterialDatabase {
 		materialsDatabase.clear();
 		loadMaterialsDatabase();
 		loadPondMaterialsFromFarmworld();
+		databaseGeneration.incrementAndGet();
 	}
 }

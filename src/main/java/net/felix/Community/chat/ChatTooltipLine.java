@@ -7,6 +7,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
+import net.felix.Community.chat.share.ShareTextCleaner;
 
 /**
  * Eine Tooltip-Zeile mit formatierten Segmenten (Farbe/Stil) für Chat-Item-Shares.

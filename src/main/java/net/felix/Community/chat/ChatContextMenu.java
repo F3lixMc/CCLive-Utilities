@@ -12,6 +12,7 @@ import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.multiplayer.chat.GuiMessage;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
+import net.felix.Community.chat.ignore.ChatIgnoreList;
 
 /**
  * Rechtsklick-Menü im offenen Chat. Es schließt den Chat nicht.
@@ -181,11 +182,16 @@ public final class ChatContextMenu {
         }
         context.fill(x, y, x + width, y + height, 0xF0101410);
         context.outline(x, y, width, height, 0xFF8AA88A);
+        int hovered = rowAt(mouseX, mouseY);
         int textY = y + 4;
+        int index = 0;
         for (Entry entry : entries) {
-            int color = 0xFFF4F7F4;
-            context.text(client.font, Component.literal(entry.label()), x + 6, textY, color, false);
+            if (index == hovered) {
+                context.fill(x + 1, y + 3 + index * ROW, x + width - 1, y + 3 + (index + 1) * ROW, 0xFF3D6B4A);
+            }
+            context.text(client.font, Component.literal(entry.label()), x + 6, textY, 0xFFF4F7F4, false);
             textY += ROW;
+            index++;
         }
     }
 

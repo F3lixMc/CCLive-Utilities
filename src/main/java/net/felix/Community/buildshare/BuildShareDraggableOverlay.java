@@ -1,7 +1,7 @@
 package net.felix.Community.buildshare;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.Community.chat.BuildShareManager;
+import net.felix.Community.chat.buildshare.BuildShareManager;
 import net.felix.utilities.DragOverlay.DraggableOverlay;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
@@ -112,6 +112,9 @@ public class BuildShareDraggableOverlay implements DraggableOverlay {
     }
 
     public static boolean handleButtonClick(int mouseX, int mouseY, int button) {
+        if (net.felix.utilities.Overall.itemviewer.ui.ViewerInputHandler.blocksUnderlyingOverlay(mouseX, mouseY)) {
+            return false;
+        }
         return BuildShareManager.getInstance().handleOverlayClick(mouseX, mouseY, button);
     }
 }

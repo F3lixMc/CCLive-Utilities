@@ -389,10 +389,31 @@ public final class ItemTooltipBuilder {
         tooltipLines.add(Component.empty());
     }
 
-    /** Status (gelb Header, dann grün/rot für gefunden/nicht gefunden); nur für Blueprints, nicht für Module/Modulbags. */
+    /** Status für Ebenen-Baupläne und für Funde außerhalb der Ebenen (Module, Lizenzen, Collection-Baupläne). */
+    private static boolean showsFoundStatus(ItemData item) {
+        if (item == null || item.info == null) {
+            return false;
+        }
+        if (Boolean.TRUE.equals(item.info.blueprint)
+                || Boolean.TRUE.equals(item.info.module)
+                || Boolean.TRUE.equals(item.info.licence)) {
+            return true;
+        }
+        if (item.foundAt == null) {
+            return false;
+        }
+        for (var location : item.foundAt) {
+            if (location != null && location.collection != null && !location.collection.isBlank()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Status (gelb Header, dann grün/rot für gefunden/nicht gefunden). */
     private static void appendStatusLines(List<Component> tooltipLines, ItemData hoveredItem, ItemInfo info,
             boolean includeCosts) {
-        if (info.blueprint == null || !info.blueprint) {
+        if (!showsFoundStatus(hoveredItem)) {
             return;
         }
         MutableComponent statusText = styledLine("Status:", 0xFFFFFF00); // yellow
@@ -441,7 +462,7 @@ public final class ItemTooltipBuilder {
             }
         }
 
-        if (net.felix.utilities.Other.clipboard.ClipboardUtility.isClipboardPinnable(hoveredItem)) {
+        if (net.felix.utilities.Overall.clipboard.ClipboardUtility.isClipboardPinnable(hoveredItem)) {
             String hotkeyText = net.felix.utilities.Overall.itemviewer.ItemViewerHotkeys.getClipboardPinHotkeyText();
             tooltipLines.add(Component.literal("An Pinnwand anheften mit Hotkey: " + hotkeyText)
                 .setStyle(Style.EMPTY.withColor(0xFF808080).withItalic(false)));

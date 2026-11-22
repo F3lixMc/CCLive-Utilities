@@ -116,7 +116,9 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
     }
     
     private int calculateUnscaledHeight() {
-        return PADDING * 2 + LINE_HEIGHT * 5;
+        Minecraft client = Minecraft.getInstance();
+        int fontHeight = client != null && client.font != null ? client.font.lineHeight : 9;
+        return net.felix.utilities.DragOverlay.OverlayInsets.heightForLines(PADDING, LINE_HEIGHT, fontHeight, 5);
     }
     
     @Override
@@ -219,6 +221,8 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         for (int i = 1; i < texts.length; i++) {
             displayTexts[i] = texts[i].replaceAll(": .+", ": -");
         }
+
+        context.outline(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
         
         // Apply matrix transformations for scaling
         var matrices = context.pose();
@@ -256,9 +260,6 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         }
         
         matrices.popMatrix();
-        
-        // Render border after scaling (using scaled dimensions)
-        context.outline(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
     }
     
     @Override

@@ -8,6 +8,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
+import net.felix.Community.chat.buildshare.BuildShareManager;
+import net.felix.Community.chat.share.ItemShareManager;
 
 /**
  * Eine CCLive-Zeile. Name und Präfix gehören zu derselben Komponente,

@@ -30,6 +30,7 @@ public final class HudOverlayVisibility {
     /**
      * {@code true}, wenn Welt-HUD-Overlays im normalen HUD-Layer gezeichnet werden dürfen.
      * Bei Inventaren/Containern auslassen (dort über {@link #renderBehindInventoryDim}).
+     * Im F6-Editor auslassen, damit nur die Vorschau sichtbar ist.
      */
     public static boolean shouldRenderWorldHudOverlays() {
         if (Boolean.TRUE.equals(RENDERING_BEHIND_DIM.get())) {
@@ -39,7 +40,10 @@ public final class HudOverlayVisibility {
         if (client == null) {
             return false;
         }
-        if (client.gui.screen() == null || client.gui.screen() instanceof OverlayEditorScreen) {
+        if (client.gui.screen() instanceof OverlayEditorScreen) {
+            return false;
+        }
+        if (client.gui.screen() == null) {
             return true;
         }
         return !(client.gui.screen() instanceof AbstractContainerScreen);
@@ -53,7 +57,7 @@ public final class HudOverlayVisibility {
         if (client == null || context == null) {
             return;
         }
-        if (!(client.gui.screen() instanceof AbstractContainerScreen) || client.gui.screen() instanceof OverlayEditorScreen) {
+        if (!(client.gui.screen() instanceof AbstractContainerScreen)) {
             return;
         }
 

@@ -23,7 +23,7 @@ public final class AlertSettings {
 		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
 		return switch (configKey) {
 			case "forschung" -> config.showNpcAlertsForschung;
-			case "amboss" -> config.showNpcAlertsAmboss;
+			case "amboss", "ambossSlot2" -> config.showNpcAlertsAmboss && (configKey.equals("amboss") || config.showNpcAlertsAmbossSlot2);
 			case "schmelzofen" -> config.showNpcAlertsSchmelzofen;
 			case "jaeger" -> config.showNpcAlertsJaeger;
 			case "seelen" -> config.showNpcAlertsSeelen;
@@ -66,6 +66,8 @@ public final class AlertSettings {
 				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungScale;
 			case "amboss":
 				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossScale;
+			case "ambossSlot2":
+				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSlot2Scale;
 			case "schmelzofen":
 				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenScale;
 			case "jaeger":
@@ -108,6 +110,7 @@ public final class AlertSettings {
 				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungTextColor;
 				break;
 			case "amboss":
+			case "ambossSlot2":
 				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossTextColor;
 				break;
 			case "schmelzofen":
@@ -154,6 +157,7 @@ public final class AlertSettings {
 				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungPercentColor;
 				break;
 			case "amboss":
+			case "ambossSlot2":
 				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossPercentColor;
 				break;
 			case "schmelzofen":

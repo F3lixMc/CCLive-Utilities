@@ -51,7 +51,7 @@ public class BossBarMixin {
 
                 CoinTrackerUtility.processBossBar(name);
                 HudStatsReader.processBossBar(name);
-                net.felix.utilities.Other.clipboard.collector.ClipboardCoinCollector.processBossBar(name);
+                net.felix.utilities.Overall.clipboard.collector.ClipboardCoinCollector.processBossBar(name);
                 WaveUtility.processBossBarWave(name, index);
 
                 boolean hasAincraftFont = !aincraftBottomFont.isEmpty()

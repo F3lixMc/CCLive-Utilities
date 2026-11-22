@@ -21,6 +21,7 @@ import static net.felix.utilities.Overall.npcalerts.overlay.SeparateOverlayRende
 public final class MainOverlayRenderer {
 
 	private static final int ICON_LINE_EXTRA_SPACING = 2;
+	private static final int AMBOSS_ROW_GAP = 6;
 
 	private MainOverlayRenderer() {
 	}
@@ -51,7 +52,8 @@ public final class MainOverlayRenderer {
 
 		// Unskalierte Dimensionen komplett dynamisch aus dem Inhalt (wie BossHP-Overlay)
 		int unscaledWidth = OverlayLayout.measureMaxLineWidth(client, lines) + (PADDING * 2);
-		int unscaledHeight = (lines.size() * actualLineHeight) + (iconLineCount * ICON_LINE_EXTRA_SPACING) + (PADDING * 2);
+		int unscaledHeight = (lines.size() * actualLineHeight) + (iconLineCount * ICON_LINE_EXTRA_SPACING)
+				+ ambossRowGaps(lines) * AMBOSS_ROW_GAP + (PADDING * 2);
 
 		float scale = config.npcAlertsMainOverlayScale;
 		if (scale <= 0) {
@@ -98,17 +100,27 @@ public final class MainOverlayRenderer {
 	private static void drawLines(GuiGraphicsExtractor context, Minecraft client, List<LineWithPercent> lines,
 			int actualLineHeight, int unscaledHeight) {
 		int totalTextHeight = 0;
+		LineWithPercent previous = null;
 		for (LineWithPercent line : lines) {
+			if (isAmbossPair(previous, line)) {
+				totalTextHeight += AMBOSS_ROW_GAP;
+			}
 			totalTextHeight += actualLineHeight;
 			if (hasIcon(line)) {
 				totalTextHeight += ICON_LINE_EXTRA_SPACING;
 			}
+			previous = line;
 		}
 		int currentY = unscaledHeight / 2 - totalTextHeight / 2;
 
+		previous = null;
 		for (LineWithPercent line : lines) {
+			if (isAmbossPair(previous, line)) {
+				currentY += AMBOSS_ROW_GAP;
+			}
 			if (line.text == null || line.text.trim().isEmpty()) {
 				currentY += actualLineHeight;
+				previous = line;
 				continue;
 			}
 			int textColor = getTextColorForConfigKey(line.configKey);
@@ -119,7 +131,26 @@ public final class MainOverlayRenderer {
 			if (hasIcon(line)) {
 				currentY += ICON_LINE_EXTRA_SPACING;
 			}
+			previous = line;
 		}
+	}
+
+	private static int ambossRowGaps(List<LineWithPercent> lines) {
+		int gaps = 0;
+		LineWithPercent previous = null;
+		for (LineWithPercent line : lines) {
+			if (isAmbossPair(previous, line)) {
+				gaps++;
+			}
+			previous = line;
+		}
+		return gaps;
+	}
+
+	private static boolean isAmbossPair(LineWithPercent previous, LineWithPercent line) {
+		return previous != null && line != null
+				&& "amboss".equals(previous.configKey)
+				&& "amboss".equals(line.configKey);
 	}
 
 	private static void drawLine(GuiGraphicsExtractor context, Minecraft client, LineWithPercent line, int currentY,

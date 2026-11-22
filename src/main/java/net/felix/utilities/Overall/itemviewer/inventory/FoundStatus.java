@@ -27,7 +27,7 @@ public final class FoundStatus {
      */
     public static void onFoundStatusChanged() {
         Runnable refresh = () -> {
-            net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.invalidateRenderSnapshot();
+            net.felix.utilities.Overall.clipboard.overlay.ClipboardDraggableOverlay.invalidateRenderSnapshot();
             if (currentSortMode.filtersNotFoundOnly()) {
                 applyFilters();
                 TooltipCache.invalidateTooltipCache();
@@ -73,14 +73,35 @@ public final class FoundStatus {
         }
     }
 
+    /** Ebenen-Baupläne und Funde außerhalb der Ebenen (Module, Lizenzen, Collection). */
+    private static boolean hasFoundStatus(ItemData item) {
+        if (item == null || item.info == null) {
+            return false;
+        }
+        if (Boolean.TRUE.equals(item.info.blueprint)
+                || Boolean.TRUE.equals(item.info.module)
+                || Boolean.TRUE.equals(item.info.licence)) {
+            return true;
+        }
+        if (item.foundAt == null) {
+            return false;
+        }
+        for (var location : item.foundAt) {
+            if (location != null && location.collection != null && !location.collection.isBlank()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Gibt den gefundenen-Status als Text zurück (für Anzeige)
      * @param item Das Item, das geprüft werden soll
      * @return "[Gefunden]" in grün oder "[Nicht Gefunden]" in rot
      */
     public static String getFoundStatusText(ItemData item) {
-        if (item.info == null || !Boolean.TRUE.equals(item.info.blueprint)) {
-            return null; // Kein Bauplan, kein Status
+        if (!hasFoundStatus(item)) {
+            return null;
         }
         
         boolean isFound = isItemFound(item);
@@ -93,8 +114,8 @@ public final class FoundStatus {
      * @return 0xFF00FF00 (grün) wenn gefunden, 0xFFFF0000 (rot) wenn nicht gefunden, 0xFFFFFFFF (weiß) wenn kein Bauplan
      */
     public static int getFoundStatusColor(ItemData item) {
-        if (item.info == null || !Boolean.TRUE.equals(item.info.blueprint)) {
-            return 0xFFFFFFFF; // Kein Bauplan, weiß
+        if (!hasFoundStatus(item)) {
+            return 0xFFFFFFFF;
         }
         
         boolean isFound = isItemFound(item);

@@ -261,8 +261,7 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
             int unscaledWidth = calculateUnscaledWidth();
             int padding = 5;
             int lineHeight = 12;
-            int searchBarHeight = 16;
-            int contentOffset = 3;
+            int searchBarHeight = MkLevelOverlayRenderer.SEARCH_BAR_HEIGHT;
             int unscaledButtonHeight = 20; // Unscaled button height
             int textX = padding;
             
@@ -287,7 +286,7 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
             }
             
             // Draw search bar
-            int searchBarY = padding - contentOffset;
+            int searchBarY = MkLevelOverlayRenderer.VERTICAL_INSET;
             int searchBarWidth = unscaledWidth - padding * 2;
             context.fill(padding, searchBarY, padding + searchBarWidth, searchBarY + searchBarHeight, 0xFF000000);
             context.outline(padding, searchBarY, searchBarWidth, searchBarHeight, 0xFF808080);
@@ -297,21 +296,27 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
             int searchTextY = searchBarY + (searchBarHeight - client.font.lineHeight) / 2;
             context.text(client.font, searchPlaceholder, padding + 2, searchTextY, 0xFF808080, false);
             
-            // Render preview entries below search bar
             int contentY = searchBarY + searchBarHeight + 2;
+            int bottom = MkLevelOverlayRenderer.contentBottom(calculateUnscaledHeight());
+            int fontHeight = client.font.lineHeight;
+            String[] previewLines = {"-Level 2", " Pferd T1, x3.000", "-Level 3", " Lohe T1, x4.000"};
+            int capacity = 0;
+            int probeY = contentY;
+            while (probeY + fontHeight <= bottom && capacity < 40) {
+                capacity++;
+                probeY += lineHeight;
+            }
             int textY = contentY;
-            
-            String previewLevel = "-Level 2";
-            String previewEssence = " Pferd T1, x3.000";
-            
-            context.text(client.font, previewLevel, textX, textY, 0xFFFFFF00, true);
-            textY += lineHeight;
-            context.text(client.font, previewEssence, textX, textY, 0xFFFFFFFF, true);
-            textY += lineHeight;
-            
-            context.text(client.font, "-Level 3", textX, textY, 0xFFFFFF00, true);
-            textY += lineHeight;
-            context.text(client.font, " Lohe T1, x4.000", textX, textY, 0xFFFFFFFF, true);
+            if (capacity > 0) {
+                int lastGlyphBottom = contentY + (capacity - 1) * lineHeight + fontHeight;
+                textY += Math.max(0, Math.min(bottom - lastGlyphBottom, lineHeight - fontHeight));
+            }
+            for (int lineIndex = 0; lineIndex < capacity; lineIndex++) {
+                String previewLine = previewLines[lineIndex % previewLines.length];
+                int previewColor = previewLine.startsWith("-") ? 0xFFFFFF00 : 0xFFFFFFFF;
+                context.text(client.font, previewLine, textX, textY, previewColor, true);
+                textY += lineHeight;
+            }
             
             matrices.popMatrix();
         }

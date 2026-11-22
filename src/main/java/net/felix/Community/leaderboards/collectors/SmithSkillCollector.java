@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.felix.Community.leaderboards.SmithSkillUpload;
+import net.felix.Community.leaderboards.upload.SmithSkillUpload;
 import net.felix.Community.leaderboards.panel.SmithSkill;
 import net.felix.utilities.Other.debug.DebugUtility;
 import net.felix.utilities.Other.glyphs.ZeichenUtility;

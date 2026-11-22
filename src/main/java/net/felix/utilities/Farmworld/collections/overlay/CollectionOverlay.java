@@ -114,7 +114,8 @@ public final class CollectionOverlay {
 		
 		int lineCount = getCollectionOverlayLineCount();
 		int unscaledWidth = maxWidth + padding * 2;
-		int unscaledHeight = lineCount * 11 + padding * 2;
+		int unscaledHeight = net.felix.utilities.DragOverlay.OverlayInsets.heightForLines(
+				padding, 11, client.font.lineHeight, lineCount);
 		
 		// Use Matrix transformations for scaling
 		org.joml.Matrix3x2fStack matrices = context.pose();
@@ -228,7 +229,10 @@ public final class CollectionOverlay {
 	 */
 	public static int getCurrentCollectionOverlayHeight() {
 		int padding = 5;
-		return getCollectionOverlayLineCount() * 11 + padding * 2;
+		net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+		int fontHeight = client != null && client.font != null ? client.font.lineHeight : 9;
+		return net.felix.utilities.DragOverlay.OverlayInsets.heightForLines(
+				padding, 11, fontHeight, getCollectionOverlayLineCount());
 	}
 
 	private static String formatBlocksPerUnitLine() {

@@ -16,6 +16,9 @@ public final class SeparateOverlayConfig {
                 return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschung;
             case "amboss":
                 return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmboss;
+            case "ambossSlot2":
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmboss
+                        && CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmbossSlot2;
             case "schmelzofen":
                 return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofen;
             case "jaeger":
@@ -58,6 +61,8 @@ public final class SeparateOverlayConfig {
                 return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungSeparateOverlay;
             case "amboss":
                 return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSeparateOverlay;
+            case "ambossSlot2":
+                return net.felix.utilities.Overall.npcalerts.overlay.AmbossSlots.slot2SeparateOverlay();
             case "schmelzofen":
                 return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenSeparateOverlay;
             case "jaeger":
@@ -129,6 +134,8 @@ public final class SeparateOverlayConfig {
                 return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungX;
             case "amboss":
                 return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossX;
+            case "ambossSlot2":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSlot2X;
             case "schmelzofen":
                 return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenX;
             case "jaeger":
@@ -166,6 +173,8 @@ public final class SeparateOverlayConfig {
                 return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungY;
             case "amboss":
                 return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossY;
+            case "ambossSlot2":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSlot2Y;
             case "schmelzofen":
                 return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenY;
             case "jaeger":
@@ -204,6 +213,9 @@ public final class SeparateOverlayConfig {
                 break;
             case "amboss":
                 CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossX = x;
+                break;
+            case "ambossSlot2":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSlot2X = x;
                 break;
             case "schmelzofen":
                 CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenX = x;
@@ -255,6 +267,9 @@ public final class SeparateOverlayConfig {
             case "amboss":
                 CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossY = y;
                 break;
+            case "ambossSlot2":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSlot2Y = y;
+                break;
             case "schmelzofen":
                 CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenY = y;
                 break;
@@ -303,6 +318,8 @@ public final class SeparateOverlayConfig {
                 return 10;
             case "amboss":
                 return 50;
+            case "ambossSlot2":
+                return 70;
             case "schmelzofen":
                 return 90;
             case "jaeger":
@@ -333,6 +350,7 @@ public final class SeparateOverlayConfig {
             case "forschung":
                 return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowIcon;
             case "amboss":
+            case "ambossSlot2":
                 return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowIcon;
             case "schmelzofen":
                 return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowIcon;
@@ -370,6 +388,7 @@ public final class SeparateOverlayConfig {
             case "forschung":
                 return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschungPercent;
             case "amboss":
+            case "ambossSlot2":
                 return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmbossPercent;
             case "schmelzofen":
                 return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofenPercent;

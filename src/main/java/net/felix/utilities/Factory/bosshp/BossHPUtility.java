@@ -20,6 +20,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import org.joml.Matrix3x2fStack;
@@ -218,20 +219,7 @@ public class BossHPUtility {
                 // Alle Boss-Kandidaten sammeln, dann genau einen wählen (nächstes Display = echte Boss-Leiste)
                 List<BossScanHit> bossHits = new ArrayList<>();
                 for (Entity entity : client.level.entitiesForRendering()) {
-                    String displayText = null;
-                    
-                    // Check if it's a TextDisplay or Display entity
-                    if (entity.getType().toString().contains("text_display") || 
-                        entity.getType().toString().contains("display")) {
-                        displayText = getTextFromDisplayEntity(entity);
-                    }
-                    // Fallback to custom name check
-                    else if (entity.hasCustomName()) {
-                        Component customName = entity.getCustomName();
-                        if (customName != null) {
-                            displayText = customName.getString().trim();
-                        }
-                    }
+                    String displayText = textFromBossCandidate(entity);
                     
                     if (displayText != null && !instance.shouldIgnoreEntity(displayText)
                         && instance.isStrictBossHpLine(displayText)) {
@@ -322,63 +310,27 @@ public class BossHPUtility {
 	}
 	
 	/**
-	 * Attempts to extract text from various types of display entities
+	 * Text von einem Text-Display, sonst vom Custom-Name. Item- und Block-Displays haben keinen Text.
 	 */
-	private static String getTextFromDisplayEntity(Entity entity) {
-		try {
-			// Try to get text using reflection for different entity types
-			String entityType = entity.getClass().getSimpleName();
-			
-			// For TextDisplayEntity or similar
-			if (entityType.contains("TextDisplay") || entityType.contains("Display")) {
-				// Try different methods to get text content
-				try {
-					// Method 1: Try to get text component
-					java.lang.reflect.Method getTextMethod = entity.getClass().getMethod("getText");
-					Object textComponent = getTextMethod.invoke(entity);
-					if (textComponent instanceof Component) {
-						String result = ((Component) textComponent).getString();
-						return result;
-					}
-				} catch (Exception e) {
-					// Method not found, continue to next method
-				}
-				
-				try {
-					// Method 2: Try to get text as string
-					java.lang.reflect.Method getTextStringMethod = entity.getClass().getMethod("getTextString");
-					Object textString = getTextStringMethod.invoke(entity);
-					if (textString instanceof String) {
-						String result = (String) textString;
-						return result;
-					}
-				} catch (Exception e) {
-					// Method not found, continue to next method
-				}
-				
-				try {
-					// Method 3: Try to get custom name
-					if (entity.hasCustomName()) {
-						Component customName = entity.getCustomName();
-						if (customName != null) {
-							String result = customName.getString();
-							return result;
-						}
-					}
-				} catch (Exception e) {
-					// Could not get custom name, continue to next method
-				}
-				
-				// Method 4: Try to get entity name
-				String entityName = entity.getName().getString();
-				if (entityName != null && !entityName.isEmpty() && !entityName.equals("entity.minecraft.text_display")) {
-					return entityName;
+	private static String textFromBossCandidate(Entity entity) {
+		if (entity instanceof Display.TextDisplay textDisplay) {
+			Component text = textDisplay.getText();
+			if (text != null) {
+				String value = text.getString().trim();
+				if (!value.isEmpty() && !value.equals("entity.minecraft.text_display")) {
+					return value;
 				}
 			}
-		} catch (Exception e) {
-			// Error extracting text, return null
 		}
-		
+		if (entity.hasCustomName()) {
+			Component customName = entity.getCustomName();
+			if (customName != null) {
+				String value = customName.getString().trim();
+				if (!value.isEmpty()) {
+					return value;
+				}
+			}
+		}
 		return null;
 	}
 	

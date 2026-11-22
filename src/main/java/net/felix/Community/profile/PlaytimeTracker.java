@@ -15,7 +15,7 @@ import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.Community.leaderboards.LeaderboardManager;
-import net.felix.Community.leaderboards.SeasonChangeGate;
+import net.felix.Community.leaderboards.sync.SeasonChangeGate;
 
 final class PlaytimeTracker {
     private static final int CHECKPOINT_TICKS = 1200;

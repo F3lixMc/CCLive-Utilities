@@ -1,8 +1,8 @@
 package net.felix.Community.leaderboards.collectors;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.felix.Community.leaderboards.FactoryLevel;
-import net.felix.Community.leaderboards.FactoryLevelUpload;
+import net.felix.Community.leaderboards.upload.FactoryLevel;
+import net.felix.Community.leaderboards.upload.FactoryLevelUpload;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelPresence;
 import net.minecraft.client.Minecraft;
 

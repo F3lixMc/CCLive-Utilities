@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
+import net.felix.utilities.Overall.clipboard.storage.CollectedMaterialsResourcesStorage;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
@@ -76,7 +76,7 @@ public class ActionBarData {
             materialTexts.put(materialName, message);
         }
         pendingStorageSync.put(materialName, (long) count);
-        net.felix.utilities.Other.clipboard.overlay.ClipboardTimeEstimate.recordCount(materialName, count);
+        net.felix.utilities.Overall.clipboard.overlay.ClipboardTimeEstimate.recordCount(materialName, count);
         schedulePostProcess();
     }
     

@@ -1,9 +1,9 @@
 package net.felix.mixin;
 
-import net.felix.Community.chat.BuildShareManager;
-import net.felix.Community.chat.BuildShareViewScreen;
+import net.felix.Community.chat.buildshare.BuildShareManager;
+import net.felix.Community.chat.buildshare.BuildShareViewScreen;
 import net.felix.Community.chat.ChatManager;
-import net.felix.Community.chat.ItemShareManager;
+import net.felix.Community.chat.share.ItemShareManager;
 import net.felix.Community.profile.ProfileStatsManager;
 import net.felix.Community.staff.StaffClientAccess;
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
@@ -55,7 +55,20 @@ public abstract class ChatScreenMixin {
             cir.setReturnValue(true);
             return;
         }
-        if (isChatConfirmKey(event) && blockCcliveGlyphsIfNeeded()) {
+        if (!isChatConfirmKey(event) || this.input == null) {
+            return;
+        }
+        if (blockCcliveGlyphsIfNeeded()) {
+            cir.setReturnValue(true);
+            return;
+        }
+        String typed = this.input.getValue();
+        if (typed != null && holdForChatRules(typed.trim())) {
+            cclive$openRulesAfterClose = false;
+            net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+            if (client != null && client.gui != null) {
+                client.gui.setScreen(net.felix.Community.chat.rules.ChatRulesScreen.forAcceptance((net.minecraft.client.gui.screens.Screen) (Object) this));
+            }
             cir.setReturnValue(true);
         }
     }
@@ -74,8 +87,8 @@ public abstract class ChatScreenMixin {
         if (client.gui.hud != null && client.gui.hud.getChat() != null) {
             client.gui.hud.getChat().saveAsDraft(draft);
         }
-        if (!(client.gui.screen() instanceof net.felix.Community.chat.ChatRulesScreen)) {
-            client.gui.setScreen(net.felix.Community.chat.ChatRulesScreen.forAcceptance());
+        if (!(client.gui.screen() instanceof net.felix.Community.chat.rules.ChatRulesScreen)) {
+            client.gui.setScreen(net.felix.Community.chat.rules.ChatRulesScreen.forAcceptance());
         }
     }
 
@@ -138,12 +151,14 @@ public abstract class ChatScreenMixin {
         ChatManager chatManager = ChatManager.getInstance();
         ChatManager.ChatMode writeMode = chatManager.getEffectiveWriteMode();
         
-        // @lp: immer in den globalen Minecraft-Chat; !item → xD
+        // @lp bleibt im Text. !item und !build werden zum Anzeigenamen, bevor PlayLegend sie sieht.
         if (trimmedMessage.startsWith("@lp")) {
-            String withXd = ItemShareManager.replaceItemTokenWithXd(trimmedMessage);
-            if (!withXd.equals(trimmedMessage)) {
-                ci.cancel();
-                sendMinecraftChat(withXd);
+            ShareSend send = dispatchShareChat(message, ci, false);
+            if (send == ShareSend.BLOCKED) {
+                return;
+            }
+            if (send == ShareSend.VANILLA) {
+                net.felix.Community.chat.share.ChatShareClient.notePlain(message);
             }
             trackMessageSent();
             return;
@@ -154,7 +169,7 @@ public abstract class ChatScreenMixin {
             ci.cancel();
 
             if (!chatManager.isShowCCLiveChat()) {
-                scheduleChatError("§cCCLive-Chat ist aus — Nachricht nicht gesendet.");
+                ChatManager.showDisabledNotice();
                 return;
             }
 
@@ -186,10 +201,8 @@ public abstract class ChatScreenMixin {
             if (globalMessage.isEmpty()) {
                 return;
             }
-            globalMessage = ItemShareManager.replaceItemTokenWithXd(globalMessage);
-
-            sendMinecraftChat(globalMessage);
-            if (!globalMessage.startsWith("/")) {
+            ShareSend send = dispatchShareChat(globalMessage, ci, true);
+            if (send == ShareSend.SENT && !globalMessage.startsWith("/")) {
                 trackMessageSent();
             }
             return;
@@ -212,24 +225,52 @@ public abstract class ChatScreenMixin {
             return;
         }
 
-        // Default-Schreibziel: !item → xD
+        // Default-Schreibziel: !item und !build werden zum Anzeigenamen.
         if (!chatManager.isShowDefaultChat() && !trimmedMessage.startsWith("/")) {
             scheduleChatError("§cDefault-Chat ist aus — Nachricht nicht gesendet.");
             ci.cancel();
             return;
         }
 
-        String defaultOut = ItemShareManager.replaceItemTokenWithXd(trimmedMessage);
-        if (!defaultOut.equals(trimmedMessage) && !trimmedMessage.startsWith("/")) {
-            ci.cancel();
-            sendMinecraftChat(defaultOut);
-            trackMessageSent();
-            return;
-        }
-        
         if (!trimmedMessage.startsWith("/")) {
+            ShareSend send = dispatchShareChat(message, ci, false);
+            if (send == ShareSend.BLOCKED) {
+                return;
+            }
+            if (send == ShareSend.VANILLA) {
+                net.felix.Community.chat.share.ChatShareClient.notePlain(message);
+            }
             trackMessageSent();
         }
+    }
+
+    private enum ShareSend { VANILLA, SENT, BLOCKED }
+
+    private static ShareSend dispatchShareChat(String text, CallbackInfo ci, boolean alwaysSend) {
+        net.felix.Community.chat.share.ChatShareOutgoing.Draft draft =
+                net.felix.Community.chat.share.ChatShareOutgoing.prepare(text);
+        net.felix.Community.chat.share.ChatShareTexts.Replacement replacement = draft.replacement();
+        if (replacement.error() != null) {
+            ci.cancel();
+            scheduleChatError("§c" + replacement.error());
+            return ShareSend.BLOCKED;
+        }
+        String outgoing = replacement.text() == null ? text : replacement.text();
+        boolean changed = !outgoing.equals(text);
+        if (!changed && !alwaysSend) {
+            return ShareSend.VANILLA;
+        }
+        if (replacement.share()) {
+            net.felix.Community.chat.share.ChatShareClient.noteShare(replacement, draft.shareId(), draft.nameColor());
+        } else if (changed || alwaysSend) {
+            net.felix.Community.chat.share.ChatShareClient.notePlain(outgoing);
+        }
+        ci.cancel();
+        if (!sendMinecraftChat(outgoing)) {
+            net.felix.Community.chat.share.ChatShareClient.dropNoted();
+            return ShareSend.BLOCKED;
+        }
+        return ShareSend.SENT;
     }
 
     private boolean blockCcliveGlyphsIfNeeded() {
@@ -273,13 +314,13 @@ public abstract class ChatScreenMixin {
     }
 
     private boolean holdForChatRules(String rawInput) {
-        if (!net.felix.Community.chat.ChatRulesAcceptance.isRulesGatedSend(
+        if (!net.felix.Community.chat.rules.ChatRulesAcceptance.isRulesGatedSend(
                 rawInput, ChatManager.getInstance().getEffectiveWriteMode() == ChatManager.ChatMode.CCLIVE)) {
             return false;
         }
-        net.felix.Community.chat.ChatRulesAcceptance store = net.felix.Community.chat.ChatRulesAcceptance.shared();
-        String accountId = net.felix.Community.chat.ChatIgnoreList.localAccountId();
-        Integer seasonId = net.felix.Community.leaderboards.SeasonChangeGate.confirmedSeasonId();
+        net.felix.Community.chat.rules.ChatRulesAcceptance store = net.felix.Community.chat.rules.ChatRulesAcceptance.shared();
+        String accountId = net.felix.Community.chat.ignore.ChatIgnoreList.localAccountId();
+        Integer seasonId = net.felix.Community.leaderboards.sync.SeasonChangeGate.confirmedSeasonId();
         if (!store.shouldHold(accountId, seasonId)) {
             return false;
         }
@@ -308,11 +349,13 @@ public abstract class ChatScreenMixin {
             || key == com.mojang.blaze3d.platform.InputConstants.KEY_NUMPADENTER;
     }
 
-    private static void sendMinecraftChat(String text) {
+    private static boolean sendMinecraftChat(String text) {
         net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
-        if (client.player != null && client.getConnection() != null && text != null && !text.isEmpty()) {
-            client.getConnection().sendChat(text);
+        if (client.player == null || client.getConnection() == null || text == null || text.isEmpty()) {
+            return false;
         }
+        client.getConnection().sendChat(text);
+        return true;
     }
 
     private static long lastGlyphErrorAtMs;

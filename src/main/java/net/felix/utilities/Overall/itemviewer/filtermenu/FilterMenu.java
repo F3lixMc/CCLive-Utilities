@@ -2,6 +2,7 @@ package net.felix.utilities.Overall.itemviewer.filtermenu;
 
 import java.util.List;
 import net.felix.utilities.Overall.itemviewer.data.ItemData;
+import net.minecraft.client.Minecraft;
 
 import static net.felix.utilities.Overall.itemviewer.filtermenu.FilterCatalog.rebuildGroups;
 import static net.felix.utilities.Overall.itemviewer.filtermenu.FilterMenuState.focusedInputKey;
@@ -29,6 +30,19 @@ public final class FilterMenu {
 
     public static boolean isOpen() {
         return open;
+    }
+
+    public static boolean contains(double mouseX, double mouseY) {
+        if (!open) {
+            return false;
+        }
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) {
+            return false;
+        }
+        PanelLayout layout = FilterMenuLayout.computePanelLayout(client);
+        return mouseX >= layout.boxX && mouseX < layout.boxX + layout.boxWidth
+                && mouseY >= layout.boxY && mouseY < layout.boxY + layout.boxHeight;
     }
 
     public static void open(List<ItemData> items, String currentSearch) {

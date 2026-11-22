@@ -537,8 +537,9 @@ public class BPViewerUtility {
             }
             
             // Check if blueprint viewer is enabled in config
-            if (!CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerEnabled || 
-                !CCLiveUtilitiesConfig.HANDLER.instance().showBlueprintViewer) {
+            if (!isVisible
+                    || !CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerEnabled
+                    || !CCLiveUtilitiesConfig.HANDLER.instance().showBlueprintViewer) {
                 return;
             }
             
@@ -559,16 +560,13 @@ public class BPViewerUtility {
             
             // Get floor data and render blueprints
             String activeFloor = getActiveFloor();
-            BlueprintConfig.FloorData floorData = config.getFloorData(activeFloor);
-            
-            // Debug info (only print once per floor change)
-            if (!activeFloor.equals(lastDebugFloor)) {
-                
-                if (floorData != null) {
-                    
-                }
+            if (!java.util.Objects.equals(activeFloor, lastDebugFloor)) {
                 lastDebugFloor = activeFloor;
             }
+            if (activeFloor == null) {
+                return;
+            }
+            BlueprintConfig.FloorData floorData = config.getFloorData(activeFloor);
             
             if (floorData != null && floorData.blueprints != null && floorData.blueprints.containsKey(currentRarity)) {
                 BlueprintConfig.RarityData rarityData = floorData.blueprints.get(currentRarity);
@@ -652,13 +650,67 @@ public class BPViewerUtility {
     }
     
     private int calculateRequiredHeight(List<String> blueprints) {
-        // Base height for title and padding - reduced for smaller overlay
-        int baseHeight = 20;
-        // Height per blueprint (12px spacing)
-        int blueprintHeight = blueprints.size() * 12;
-        // Add some padding at the bottom - reduced
-        int bottomPadding = 5;
-        return baseHeight + blueprintHeight + bottomPadding;
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale;
+        return heightForVisibleRows(countVisibleRows(blueprints), scale);
+    }
+
+    /**
+     * Der Titel steht bei lokal y = 5, der Textblock zusätzlich 2 Pixel unter dem Hintergrund.
+     * Unter der letzten Glyphe bleibt derselbe Abstand wie zwischen oberem Rand und Titel.
+     */
+    public static int heightForVisibleRows(int visibleRows) {
+        return heightForVisibleRows(visibleRows, 1.0f);
+    }
+
+    public static int heightForVisibleRows(int visibleRows, float scale) {
+        float safeScale = scale <= 0.0f ? 1.0f : scale;
+        int fontHeight = 9;
+        int titleY = 5;
+        int textShift = 2;
+        int lastTextY = visibleRows <= 0 ? titleY : 17 + (visibleRows - 1) * 12;
+        double unscaled = (2.0 * textShift) / safeScale + lastTextY + fontHeight + titleY;
+        return (int) Math.ceil(unscaled);
+    }
+
+    public int countVisibleRows(List<String> blueprints) {
+        if (blueprints == null || blueprints.isEmpty()) {
+            return 0;
+        }
+        int missing = 0;
+        for (String blueprint : blueprints) {
+            if (!isListedBlueprintFound(blueprint)) {
+                missing++;
+            }
+        }
+        return visibleRowCount(blueprints.size(), missing, CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerMissingMode);
+    }
+
+    public static int visibleRowCount(int total, int missing, boolean missingMode) {
+        if (!missingMode) {
+            return total;
+        }
+        if (total > 0 && missing == 0) {
+            return 1;
+        }
+        return missing;
+    }
+
+    private boolean isListedBlueprintFound(String blueprint) {
+        String displayText = blueprint.startsWith("- ") ? blueprint.substring(2) : blueprint;
+        if (displayText.equals("Drachenzahn")) {
+            String currentRarityLower = currentRarity.toLowerCase();
+            if (currentRarityLower.equals("epic") || currentRarityLower.equals("legendary")) {
+                return foundBlueprints.containsKey(displayText + ":" + currentRarityLower)
+                        || isBlueprintFound(getActiveFloor(), displayText + ":" + currentRarityLower);
+            }
+            return false;
+        }
+        return foundBlueprints.containsKey(displayText)
+                || foundBlueprints.containsKey(displayText + ":epic")
+                || foundBlueprints.containsKey(displayText + ":legendary")
+                || isBlueprintFound(getActiveFloor(), displayText)
+                || isBlueprintFound(getActiveFloor(), displayText + ":epic")
+                || isBlueprintFound(getActiveFloor(), displayText + ":legendary");
     }
     
     private int calculateRequiredWidth(List<String> blueprints) {
@@ -666,14 +718,22 @@ public class BPViewerUtility {
         if (client == null) return HUD_WIDTH;
         
         int maxWidth = HUD_WIDTH;
+        boolean missingMode = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerMissingMode;
+        boolean drewRow = false;
         for (String blueprint : blueprints) {
+            if (missingMode && isListedBlueprintFound(blueprint)) {
+                continue;
+            }
+            drewRow = true;
             String displayText = blueprint.startsWith("- ") ? blueprint.substring(2) : blueprint;
             int textWidth = client.font.width(displayText);
-            // Add padding for the text (left margin + right margin) - increased for longer German text
             textWidth += 45;
             if (textWidth > maxWidth) {
                 maxWidth = textWidth;
             }
+        }
+        if (missingMode && !drewRow && !blueprints.isEmpty()) {
+            maxWidth = Math.max(maxWidth, client.font.width("Alle gefunden") + 45);
         }
         // Ensure minimum width
         return Math.max(maxWidth, HUD_WIDTH);
@@ -1011,8 +1071,9 @@ public class BPViewerUtility {
                            }
                        }
                        
-                       if (!foundInFloor) {
-                       } else {
+                       if (!foundInFloor && !(isDrachenzahn && (nameAndColor == null || nameAndColor.rarity == null))) {
+                           String rarity = nameAndColor != null ? nameAndColor.rarity : null;
+                           rememberFoundBlueprint(blueprintName, rarity);
                        }
                    }
                } else if (messageText.contains("[Bauplan]")) {
@@ -1162,6 +1223,35 @@ public class BPViewerUtility {
 
            }
     
+    static String foundStorageKey(String blueprintName, String rarity) {
+        if (blueprintName == null || blueprintName.isEmpty()) {
+            return "";
+        }
+        if ("epic".equals(rarity) || "legendary".equals(rarity)) {
+            return blueprintName + ":" + rarity;
+        }
+        return blueprintName;
+    }
+
+    /** Fund aus einer Farmwelt-Collection, ohne Ebeneneintrag. */
+    public static void markCatalogBlueprintFound(String blueprintName) {
+        if (INSTANCE == null || blueprintName == null || blueprintName.isBlank()) {
+            return;
+        }
+        INSTANCE.rememberFoundBlueprint(blueprintName.trim(), null);
+    }
+
+    /** Fund ohne Ebeneneintrag. Die Rarität hängt nur bei epic und legendary am Namen. */
+    private void rememberFoundBlueprint(String blueprintName, String rarity) {
+        String blueprintKey = foundStorageKey(blueprintName, rarity);
+        if (blueprintKey.isEmpty() || foundBlueprints.containsKey(blueprintKey)) {
+            return;
+        }
+        foundBlueprints.put(blueprintKey, rarity != null ? rarity : "unknown");
+        saveFoundBlueprints();
+        net.felix.utilities.Overall.itemviewer.inventory.FoundStatus.onFoundStatusChanged();
+    }
+
     private void markBlueprintAsFound(String blueprintName, String rarity, String floor) {
         Minecraft client = Minecraft.getInstance();
         Runnable task = () -> markBlueprintAsFoundOnClient(blueprintName, rarity, floor);

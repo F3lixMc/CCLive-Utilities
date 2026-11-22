@@ -35,13 +35,13 @@ public class MouseScrollMixin {
                 // Das ist aber in Ordnung, da wir nur die Pagination ändern
                 return;
             }
-            if (net.felix.Community.chat.BuildShareViewScreen.isActive()) {
-                net.felix.Community.chat.BuildShareViewScreen view = net.felix.Community.chat.BuildShareViewScreen.getActive();
+            if (net.felix.Community.chat.buildshare.BuildShareViewScreen.isActive()) {
+                net.felix.Community.chat.buildshare.BuildShareViewScreen view = net.felix.Community.chat.buildshare.BuildShareViewScreen.getActive();
                 if (view != null && view.handleStatOverlayScroll(mouseX, mouseY, vertical)) {
                     return;
                 }
             }
-            if (net.felix.Community.chat.BuildShareManager.getInstance().handleOverlayScroll(mouseX, mouseY, vertical)) {
+            if (net.felix.Community.chat.buildshare.BuildShareManager.getInstance().handleOverlayScroll(mouseX, mouseY, vertical)) {
                 return;
             }
         }

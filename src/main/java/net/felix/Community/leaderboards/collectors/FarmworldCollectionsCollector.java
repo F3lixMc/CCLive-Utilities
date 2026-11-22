@@ -366,6 +366,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
         // Updaten wenn sich der Wert geändert hat ODER wenn forceSend=true (z.B. bei Zone-Wechsel)
         if (newTotal != currentTotal || forceSend) {
             zoneCollections.put(zone, newTotal);
+            net.felix.utilities.Farmworld.collections.FarmworldBlueprintUnlocks.apply(zone, newTotal);
             saveZoneCollections();
             
             // DEBUG: Nur senden wenn aktiviert
@@ -406,6 +407,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                 long value = json.get(zone).getAsLong();
                 if (value >= 0) {
                     zoneCollections.put(zone, value);
+                    net.felix.utilities.Farmworld.collections.FarmworldBlueprintUnlocks.apply(zone, value);
                     }
                 }
             } catch (Exception e) {

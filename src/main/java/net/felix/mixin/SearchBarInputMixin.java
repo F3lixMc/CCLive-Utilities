@@ -125,7 +125,7 @@ public abstract class SearchBarInputMixin {
         }
         
         // Handle Clipboard toggle hotkey (works in inventories)
-        if (net.felix.utilities.Other.clipboard.ClipboardUtility.handleKeyPress(keyCode, scanCode)) {
+        if (net.felix.utilities.Overall.clipboard.ClipboardUtility.handleKeyPress(keyCode, scanCode)) {
             cir.setReturnValue(true);
             return;
         }

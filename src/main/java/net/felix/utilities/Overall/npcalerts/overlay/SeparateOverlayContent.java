@@ -24,6 +24,8 @@ public final class SeparateOverlayContent {
                 return showIcon ? NpcAlertState.forschung.getDisplayString() : "Forschung: " + NpcAlertState.forschung.getDisplayString();
             case "amboss":
                 return showIcon ? NpcAlertState.ambossCapacity.getDisplayString() : "Amboss: " + NpcAlertState.ambossCapacity.getDisplayString();
+            case "ambossSlot2":
+                return showIcon ? NpcAlertState.ambossSlot2.getDisplayString() : "Amboss Slot 2: " + NpcAlertState.ambossSlot2.getDisplayString();
             case "schmelzofen":
                 return showIcon ? NpcAlertState.schmelzofenCapacity.getDisplayString() : "Schmelzofen: " + NpcAlertState.schmelzofenCapacity.getDisplayString();
             case "jaeger":
@@ -152,6 +154,15 @@ public final class SeparateOverlayContent {
                     );
                 }
                 break;
+            case "ambossSlot2":
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmbossPercent &&
+                    NpcAlertState.ambossSlot2.isValid()) {
+                    return PercentFormatter.formatPercent(
+                        NpcAlertState.ambossSlot2.current,
+                        NpcAlertState.ambossSlot2.max
+                    );
+                }
+                break;
             case "schmelzofen":
                 if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofenPercent && 
                     NpcAlertState.schmelzofenCapacity.isValid()) {
@@ -255,6 +266,14 @@ public final class SeparateOverlayContent {
                 if (NpcAlertState.ambossCapacity.isValid()) {
                     double currentPercent = ((double)NpcAlertState.ambossCapacity.current / 
                         (double)NpcAlertState.ambossCapacity.max) * 100.0;
+                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossWarnPercent;
+                    return warnPercent >= 0 && currentPercent >= warnPercent;
+                }
+                break;
+            case "ambossSlot2":
+                if (NpcAlertState.ambossSlot2.isValid()) {
+                    double currentPercent = ((double) NpcAlertState.ambossSlot2.current /
+                        (double) NpcAlertState.ambossSlot2.max) * 100.0;
                     double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossWarnPercent;
                     return warnPercent >= 0 && currentPercent >= warnPercent;
                 }

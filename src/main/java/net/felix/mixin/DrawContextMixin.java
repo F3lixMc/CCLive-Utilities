@@ -1,8 +1,8 @@
 package net.felix.mixin;
 
 import java.util.List;
-import net.felix.Community.chat.BuildShareManager;
-import net.felix.Community.chat.BuildShareOverviewLayout;
+import net.felix.Community.chat.buildshare.BuildShareManager;
+import net.felix.Community.chat.buildshare.BuildShareOverviewLayout;
 import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;

@@ -170,6 +170,9 @@ public final class ViewerInputHandler {
             return false;
         }
 
+        if (handleKitCompactClick(pos, mouseX, mouseY, button)) {
+            return true;
+        }
         if (handleSideButtonsClick(pos, mouseX, mouseY, button)) {
             return true;
         }
@@ -456,6 +459,22 @@ public final class ViewerInputHandler {
         return false;
     }
 
+    private static boolean handleKitCompactClick(ViewerPosition pos, double mouseX, double mouseY, int button) {
+        if (button != 0 || !net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.kitFilterActive) {
+            return false;
+        }
+        int size = ViewerLayout.KIT_COMPACT_BUTTON_SIZE;
+        int buttonX = ViewerLayout.kitCompactButtonX(pos);
+        int buttonY = ViewerLayout.kitCompactButtonY(pos);
+        if (!isInside(mouseX, mouseY, buttonX, buttonY, size, size)) {
+            return false;
+        }
+        net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.kitCompact =
+                !net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.kitCompact;
+        ViewerLayout.invalidateViewerPositionCache();
+        return true;
+    }
+
     /** Linksklick schaltet den Kit-Filter um (oder öffnet die Kit-Auswahl), Rechtsklick öffnet die Kit-Auswahl. */
     private static boolean handleKitButtonClick(ViewerPosition pos, double mouseX, double mouseY, int button) {
         if (!isInside(mouseX, mouseY, pos.kitButtonX, pos.kitButtonY, KIT_BUTTON_SIZE, KIT_BUTTON_SIZE)) {
@@ -466,6 +485,7 @@ public final class ViewerInputHandler {
                     net.felix.utilities.Town.kits.filter.KitFilterUtility.getKitSelection(KIT_BUTTON_INDEX);
             if (kitSelection != null) {
                 kitFilterActive = !kitFilterActive;
+                ViewerLayout.invalidateViewerPositionCache();
                 applyFilters(); // Aktualisiere Filter
             } else {
                 // Kein Kit ausgewählt - öffne Kit-Auswahlmenü
@@ -569,6 +589,82 @@ public final class ViewerInputHandler {
         if (isInside(mouseX, mouseY, gridX, gridY, gridWidth, gridHeight)) {
             kitEditorPickHandler.accept(hoveredItemForClick, kitEditorPickTarget);
             return true;
+        }
+        return false;
+    }
+
+    /**
+     * Sichtbare Viewer-Flächen liegen über Clipboard und Build-Share.
+     * Die Abfrage gilt, bevor diese Overlays ihren eigenen Treffer prüfen.
+     */
+    public static boolean blocksUnderlyingOverlay(double mouseX, double mouseY) {
+        if (!isVisible()) {
+            return false;
+        }
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.getWindow() == null) {
+            return false;
+        }
+        if (helpScreenOpen) {
+            return true;
+        }
+        if (FilterMenu.contains(mouseX, mouseY)) {
+            return true;
+        }
+        if (isMinimized) {
+            int screenWidth = client.getWindow().getGuiScaledWidth();
+            int screenHeight = client.getWindow().getGuiScaledHeight();
+            int buttonX = screenWidth - MINIMIZE_BUTTON_SIZE - 10;
+            int buttonY = screenHeight - MINIMIZE_BUTTON_SIZE - 10;
+            return isInside(mouseX, mouseY, buttonX, buttonY, MINIMIZE_BUTTON_SIZE, MINIMIZE_BUTTON_SIZE);
+        }
+        ViewerPosition pos = resolveViewerPositionForMouseInput(client);
+        if (pos == null) {
+            return false;
+        }
+        if (isInside(mouseX, mouseY, pos.viewerX, pos.viewerY, pos.viewerWidth, pos.viewerHeight)) {
+            return true;
+        }
+        int sideButtonX = getSideButtonX(pos);
+        int minimizeButtonY = getMinimizeButtonY(pos);
+        if (isInside(mouseX, mouseY, sideButtonX, minimizeButtonY, MINIMIZE_BUTTON_SIZE, MINIMIZE_BUTTON_SIZE)) {
+            return true;
+        }
+        if (isViewerSettingsMenuOpen) {
+            int menuWidth = getViewerSettingsMenuWidth();
+            int menuX = sideButtonX - menuWidth;
+            int settingsButtonY = getViewerSettingsButtonY(pos);
+            int menuAreaWidth = sideButtonX + MINIMIZE_BUTTON_SIZE - menuX;
+            if (isInside(mouseX, mouseY, menuX, settingsButtonY, menuAreaWidth, MINIMIZE_BUTTON_SIZE)) {
+                return true;
+            }
+        }
+        if (isSymbolMenuOpen) {
+            int menuButtonWidth = 20;
+            int menuWidth = menuButtonWidth * 3 + 2;
+            int menuX = pos.symbolButtonX - menuWidth;
+            if (isInside(mouseX, mouseY, menuX, pos.symbolButtonY, pos.symbolButtonX + SYMBOL_BUTTON_SIZE - menuX, SYMBOL_BUTTON_SIZE)) {
+                return true;
+            }
+        }
+        if (sortDropdownOpen) {
+            int listHeight = SortMode.values().length * SORT_OPTION_HEIGHT;
+            if (isInside(mouseX, mouseY, pos.dropdownX, pos.dropdownY, pos.dropdownWidth, SORT_DROPDOWN_HEIGHT + listHeight)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Rechte und untere Kante zählen nicht. {@code areas} ist x, y, Breite, Höhe hintereinander. */
+    static boolean coversAny(double mouseX, double mouseY, int[] areas) {
+        if (areas == null) {
+            return false;
+        }
+        for (int i = 0; i + 3 < areas.length; i += 4) {
+            if (isInside(mouseX, mouseY, areas[i], areas[i + 1], areas[i + 2], areas[i + 3])) {
+                return true;
+            }
         }
         return false;
     }

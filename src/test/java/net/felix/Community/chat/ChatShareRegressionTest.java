@@ -18,6 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import net.felix.Community.chat.share.ItemShareManager;
+import net.felix.Community.chat.share.ShareTextCleaner;
 
 class ChatShareRegressionTest {
 

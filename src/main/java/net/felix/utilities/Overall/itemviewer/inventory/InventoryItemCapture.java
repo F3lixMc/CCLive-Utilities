@@ -58,7 +58,7 @@ public final class InventoryItemCapture {
         if (itemName == null || itemName.isEmpty()) {
             itemName = stack.getHoverName().getString();
         }
-        itemName = cleanItemNameForLookup(itemName);
+        itemName = resolveCatalogName(handledScreen, client, stack, itemName);
         
         String foundAtFloor = extractFoundAtFromTooltip(handledScreen, client, stack);
         ItemData itemData = findItemByNameAndFoundAt(itemName, foundAtFloor);
@@ -66,8 +66,8 @@ public final class InventoryItemCapture {
             itemData = findItemByName(itemName);
         }
         
-        if (itemData != null && net.felix.utilities.Other.clipboard.ClipboardUtility.isClipboardPinnable(itemData)) {
-            return net.felix.utilities.Other.clipboard.ClipboardUtility.addBlueprint(itemData);
+        if (itemData != null && net.felix.utilities.Overall.clipboard.ClipboardUtility.isClipboardPinnable(itemData)) {
+            return net.felix.utilities.Overall.clipboard.ClipboardUtility.addBlueprint(itemData);
         }
         return false;
     }
@@ -102,7 +102,7 @@ public final class InventoryItemCapture {
             rawName = stack.getHoverName().getString();
         }
         String displayName = cleanItemNameForDisplay(rawName);
-        String lookupName = cleanItemNameForLookup(rawName);
+        String lookupName = resolveCatalogName(rawName, tooltipLines);
 
         String foundAtFloor = extractFoundAtFromTooltip(handledScreen, client, stack);
         ItemData template = findItemByNameAndFoundAt(lookupName, foundAtFloor);
@@ -110,7 +110,7 @@ public final class InventoryItemCapture {
             template = findItemByName(lookupName);
         }
 
-        return net.felix.Community.chat.ItemShareManager.buildSnapshotFromTooltip(displayName, tooltipLines, template);
+        return net.felix.Community.chat.share.ItemShareManager.buildSnapshotFromTooltip(displayName, tooltipLines, template);
     }
 
     /**
@@ -131,7 +131,7 @@ public final class InventoryItemCapture {
             rawName = stack.getHoverName().getString();
         }
         String displayName = cleanItemNameForDisplay(rawName);
-        String lookupName = cleanItemNameForLookup(rawName);
+        String lookupName = resolveCatalogName(rawName, tooltipLines);
 
         String foundAtFloor = extractFoundAtFromTooltip(handledScreen, client, stack);
         ItemData template = findItemByNameAndFoundAt(lookupName, foundAtFloor);
@@ -139,7 +139,7 @@ public final class InventoryItemCapture {
             template = findItemByName(lookupName);
         }
 
-        ItemData snapshot = net.felix.Community.chat.ItemShareManager.buildSnapshotFromTooltip(
+        ItemData snapshot = net.felix.Community.chat.share.ItemShareManager.buildSnapshotFromTooltip(
             displayName, tooltipLines, template);
         // Live-Stack hat Vorrang für Icon (Modul-Platzhalter oft nicht in ItemViewer)
         applyLiveStackVisuals(snapshot, stack);
@@ -485,6 +485,30 @@ public final class InventoryItemCapture {
     }
 
     /**
+     * „Magnet [Modul]“ plus Tooltip-Zeile {@code Stufe: [I]} wird zum JEI-Namen
+     * (Kupfermagnet, Eisenmagnet, Goldmagnet, Diamantmagnet). Sonst normale Suche.
+     */
+    private static String resolveCatalogName(
+            net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen,
+            Minecraft client,
+            net.minecraft.world.item.ItemStack stack,
+            String rawName) {
+        return resolveCatalogName(rawName, extractShareTooltipLines(screen, client, stack));
+    }
+
+    private static String resolveCatalogName(
+            String rawName,
+            java.util.List<net.felix.Community.chat.ChatTooltipLine> tooltipLines) {
+        String mapped = net.felix.Community.chat.share.MagnetModuleNames.jeiName(rawName, tooltipLines);
+        if (mapped != null) {
+            return mapped;
+        }
+        String lookup = cleanItemNameForLookup(rawName);
+        mapped = net.felix.Community.chat.share.MagnetModuleNames.jeiName(lookup, tooltipLines);
+        return mapped != null ? mapped : lookup;
+    }
+
+    /**
      * Bereinigt einen Item-Namen für die Suche in items.json
      * Entfernt Formatierungszeichen, chinesische Zeichen und "- [Bauplan]" Suffixe
      */
@@ -537,6 +561,6 @@ public final class InventoryItemCapture {
 
     /** Anzeigename: Layout-Glyphen/Spacer weg, Schmiedegrad in [] bleibt erhalten. */
     private static String cleanItemNameForDisplay(String itemName) {
-        return net.felix.Community.chat.ShareTextCleaner.cleanDisplayName(itemName);
+        return net.felix.Community.chat.share.ShareTextCleaner.cleanDisplayName(itemName);
     }
 }

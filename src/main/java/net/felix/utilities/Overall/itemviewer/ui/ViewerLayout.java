@@ -70,6 +70,17 @@ public final class ViewerLayout {
      * Viewer-Breite/-Höhe aus maximalem Platz; Grid höchstens laut Config ({@link CCLiveUtilitiesConfig#getItemViewerMaxSlots()} Slots).
      */
     private static int[] computeViewerSize(int maxViewerWidth, int maxViewerHeight) {
+        if (net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.useCompactKit()) {
+            int slot = ItemViewerGrid.getSlotSize();
+            int maxColumns = Math.max(1, (maxViewerWidth - VIEWER_PADDING * 2) / slot);
+            int maxRows = Math.max(1, (maxViewerHeight - VIEWER_GRID_CHROME_HEIGHT) / slot);
+            int[] compact = net.felix.utilities.Overall.itemviewer.kit.KitCompactLayout.gridForCount(
+                    net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.compactItemCount, maxColumns, maxRows);
+            return new int[] {
+                    compact[0] * slot + VIEWER_PADDING * 2,
+                    VIEWER_GRID_CHROME_HEIGHT + compact[1] * slot
+            };
+        }
         int minViewerWidth = ItemViewerGrid.getDefaultGridWidth() + VIEWER_PADDING * 2;
         int gridSpaceW = Math.max(ItemViewerGrid.getDefaultGridWidth(), maxViewerWidth - VIEWER_PADDING * 2);
         int gridSpaceH = Math.max(ItemViewerGrid.getGridHeight(), maxViewerHeight - VIEWER_GRID_CHROME_HEIGHT);
@@ -98,9 +109,6 @@ public final class ViewerLayout {
         
         int dropdownWidth = getSortDropdownWidth(client);
         
-        // Suchfeld nutzt volle Breite (minus Hilfe- und Filter-Button)
-        int searchWidth = viewerWidth - VIEWER_PADDING * 2 - HELP_BUTTON_SIZE - 5 - FILTER_BUTTON_SIZE - 5;
-        
         // Dropdown wird unter die Suchleiste platziert
         int dropdownX = viewerX + VIEWER_PADDING;
         int dropdownY = viewerY + VIEWER_PADDING + SEARCH_HEIGHT + 5;
@@ -111,10 +119,11 @@ public final class ViewerLayout {
         int filterButtonX = helpButtonX + HELP_BUTTON_SIZE + 5;
         int filterButtonY = helpButtonY;
         
-        // Symbol-Button Position (rechts bündig mit Suchleiste)
+        // Apfel-Icon links vom Verkleinern-Symbol, Suchzeile endet davor
+        int symbolButtonX = viewerX + viewerWidth - VIEWER_PADDING - SYMBOL_BUTTON_SIZE - topRightIconReserve();
+        int symbolButtonY = viewerY + VIEWER_PADDING;
         int searchX = filterButtonX + FILTER_BUTTON_SIZE + 5;
-        int symbolButtonX = searchX + searchWidth - SYMBOL_BUTTON_SIZE;
-        int symbolButtonY = dropdownY; // Gleiche Y-Position wie Dropdown
+        int searchWidth = Math.max(40, symbolButtonX - searchX - 5);
         
         // Favoriten-Button Position (rechts vom Dropdown, gleiche Höhe)
         int favoritesButtonX = dropdownX + dropdownWidth + 5; // 5px Abstand zum Dropdown
@@ -167,6 +176,24 @@ public final class ViewerLayout {
 
     // Symbol-Button Variablen (für @, <, >)
     static final int SYMBOL_BUTTON_SIZE = 20; // Gleiche Höhe wie Dropdown für symmetrisches Aussehen
+
+    /** Freiraum rechts vom Apfel-Icon, etwa eine Icon-Breite, damit das Verkleinern-Symbol sichtbar bleibt. */
+    private static int topRightIconReserve() {
+        if (!net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.kitFilterActive) {
+            return 0;
+        }
+        return SYMBOL_BUTTON_SIZE;
+    }
+
+    static final int KIT_COMPACT_BUTTON_SIZE = 16;
+
+    static int kitCompactButtonX(ViewerPosition pos) {
+        return pos.viewerX + pos.viewerWidth - VIEWER_PADDING - KIT_COMPACT_BUTTON_SIZE;
+    }
+
+    static int kitCompactButtonY(ViewerPosition pos) {
+        return pos.viewerY + VIEWER_PADDING + (SYMBOL_BUTTON_SIZE - KIT_COMPACT_BUTTON_SIZE) / 2;
+    }
 
     static int getViewerSettingsMenuWidth() {
         // Linker Rand (1px) + Buttons + Trennlinien dazwischen (wie Symbol-Menü)
@@ -401,11 +428,11 @@ public final class ViewerLayout {
         int filterButtonX = helpButtonX + HELP_BUTTON_SIZE + 5;
         int filterButtonY = helpButtonY;
         
-        int symbolButtonX = viewerX + viewerWidth - VIEWER_PADDING - SYMBOL_BUTTON_SIZE;
+        int symbolButtonX = viewerX + viewerWidth - VIEWER_PADDING - SYMBOL_BUTTON_SIZE - topRightIconReserve();
         int symbolButtonY = viewerY + VIEWER_PADDING;
         
         int searchX = filterButtonX + FILTER_BUTTON_SIZE + 5;
-        int searchWidth = symbolButtonX - searchX - 5;
+        int searchWidth = Math.max(40, symbolButtonX - searchX - 5);
         
         int dropdownX = viewerX + VIEWER_PADDING;
         int dropdownY = viewerY + VIEWER_PADDING + SEARCH_HEIGHT + 5;

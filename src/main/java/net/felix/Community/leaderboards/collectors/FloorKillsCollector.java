@@ -1,9 +1,13 @@
 package net.felix.Community.leaderboards.collectors;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.Community.chat.ignore.ChatIgnoreList;
 import net.felix.Community.leaderboards.LeaderboardManager;
+import net.felix.Community.leaderboards.sync.SeasonChangeGate;
 import net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility;
 import net.felix.utilities.Aincraft.kills.KillsUtility;
 import net.minecraft.client.Minecraft;
@@ -22,8 +26,13 @@ public class FloorKillsCollector implements DataCollector {
     private static final int CACHE_UPDATE_INTERVAL = 20; // Alle 20 Ticks = 1 Sekunde
     private int cachedKillsForCurrentFloor = 0; // Gecachter Wert für den aktuellen Floor (wird regelmäßig aktualisiert)
     
-    // Cache für Floor-Kill-Daten
+    // Cache für Floor-Kill-Daten der gebundenen Seasonphase
     private final Map<String, Long> floorKills = new HashMap<>();
+    private static FloorKillsCollector active;
+    private String boundAccount;
+    private int boundSeason = -1;
+    private boolean boundPreseason;
+    private boolean phaseBound;
     private String lastFloor = null;
     private int lastTotalKills = 0; // Absoluter Kill-Wert aus Bossbar
     
@@ -41,6 +50,7 @@ public class FloorKillsCollector implements DataCollector {
         System.out.println("🔍 [FloorKillsCollector] Starte Initialisierung...");
         // Registriere Tick-Event für Kill-Tracking
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
+        active = this;
         
         isActive = true;
         System.out.println("✅ [FloorKillsCollector] FloorKillsCollector initialisiert und aktiv");
@@ -127,17 +137,6 @@ public class FloorKillsCollector implements DataCollector {
                 int newFloorKills = KillsUtility.getTotalKills();
                 lastTotalKills = newFloorKills; // Initialisiere mit aktuellem Wert für neuen Floor
                 cachedKillsForCurrentFloor = newFloorKills; // Cache auch für neuen Floor initialisieren
-                
-                // WICHTIG: Wenn der aktuelle Wert niedriger ist als der gespeicherte Wert,
-                // bedeutet das, dass wir den Floor neu betreten haben (z.B. nach Rejoin)
-                // In diesem Fall sollten wir den Cache-Wert mit dem aktuellen Wert überschreiben
-                long cachedKills = floorKills.getOrDefault(currentFloor, 0L);
-                if (newFloorKills < cachedKills) {
-                    System.out.println("🔄 Floor neu betreten: " + currentFloor + " - Cache (" + cachedKills + ") > Aktuell (" + newFloorKills + "), überschreibe Cache");
-                    floorKills.put(currentFloor, (long) newFloorKills);
-                    // Sende sofort den korrekten Wert an den Server
-                    LeaderboardManager.getInstance().updateScore(currentFloor, newFloorKills);
-                }
             } else {
                 // Gleicher Floor - aktualisiere lastTotalKills kontinuierlich (nur wenn höher)
                 // So haben wir beim Floor-Wechsel immer den aktuellsten Wert
@@ -166,10 +165,8 @@ public class FloorKillsCollector implements DataCollector {
                 // Aktualisiere lastTotalKills immer (auch wenn niedriger, für korrekte Floor-Wechsel-Erkennung)
                 lastTotalKills = totalKills;
                 
-                // Wenn Kills sich erhöht haben ODER wenn der aktuelle Wert niedriger ist als der Cache-Wert
-                // (was darauf hindeutet, dass wir den Floor neu betreten haben), aktualisiere
                 long cachedKills = floorKills.getOrDefault(currentFloor, 0L);
-                if (totalKills > cachedKills || totalKills < cachedKills) {
+                if (totalKills > cachedKills) {
                     updateFloorScore(currentFloor, totalKills);
                 }
             }
@@ -197,7 +194,7 @@ public class FloorKillsCollector implements DataCollector {
     /**
      * Aktualisiert den Score für einen Floor
      */
-    private void updateFloorScore(String floor, int kills) {
+    private void updateFloorScore(String floor, long kills) {
         if (floor == null || kills < 0) return; // Erlaube auch 0 (falls Bossbar 0 zeigt)
         
         // Validiere Floor-Name - ignoriere ungültige Floor-Namen
@@ -206,22 +203,14 @@ public class FloorKillsCollector implements DataCollector {
             return;
         }
         
-        // Hole bisherige Kills für diesen Floor
-        long currentTotal = floorKills.getOrDefault(floor, 0L);
-        
-        // Wenn der neue Wert niedriger ist als der gespeicherte Wert, bedeutet das,
-        // dass wir den Floor neu betreten haben (z.B. nach Rejoin) - überschreibe den Cache
-        // Ansonsten verwende den höheren Wert (falls Bossbar mal runtergeht, behalten wir den höchsten)
-        long newTotal;
-        if (kills < currentTotal) {
-            // Floor wurde neu betreten - verwende den aktuellen Wert
-            newTotal = (long) kills;
-        } else {
-            // Normaler Fall - verwende den höheren Wert
-            newTotal = Math.max(currentTotal, (long) kills);
+        usePhase();
+        if (!phaseBound) {
+            return;
         }
+        long currentTotal = floorKills.getOrDefault(floor, 0L);
+        long newTotal = FloorKillStore.shared().read(boundAccount, boundSeason, boundPreseason, floor, kills);
         
-        // Nur updaten wenn sich der Wert geändert hat
+        // Nur updaten wenn der gespeicherte Stand gestiegen ist
         if (newTotal != currentTotal) {
             floorKills.put(floor, newTotal);
             // Nur bei signifikanten Änderungen loggen (>100 kills Unterschied)
@@ -291,8 +280,7 @@ public class FloorKillsCollector implements DataCollector {
      */
     public void setFloorKills(String floor, long kills) {
         if (floor != null) {
-            floorKills.put(floor, kills);
-            LeaderboardManager.getInstance().updateScore(floor, kills);
+            updateFloorScore(floor, kills);
         }
     }
     
@@ -330,7 +318,11 @@ public class FloorKillsCollector implements DataCollector {
      */
     private void updateAlltimeKills() {
         try {
-            // PRIMÄR: Berechne Summe aller Floor-Kills
+            usePhase();
+            if (!phaseBound) {
+                return;
+            }
+            // PRIMÄR: Summe der gespeicherten Ebenenstände dieser Phase
             long calculatedAlltimeKills = getTotalKills();
             
             // Prüfe ob sich der Wert geändert hat
@@ -391,6 +383,9 @@ public class FloorKillsCollector implements DataCollector {
     public void resetFloorKills(String floor) {
         if (floor != null) {
             floorKills.remove(floor);
+            if (phaseBound) {
+                FloorKillStore.shared().remove(boundAccount, boundSeason, boundPreseason, floor);
+            }
             LeaderboardManager.getInstance().updateScore(floor, 0);
         }
     }
@@ -399,10 +394,49 @@ public class FloorKillsCollector implements DataCollector {
      * Resettet alle Floor-Kill-Daten
      */
     public void resetAllFloorKills() {
-        for (String floor : floorKills.keySet()) {
+        for (String floor : new ArrayList<>(floorKills.keySet())) {
             LeaderboardManager.getInstance().updateScore(floor, 0);
         }
         floorKills.clear();
+        if (phaseBound) {
+            FloorKillStore.shared().clear(boundAccount, boundSeason, boundPreseason);
+        }
+    }
+
+    /** Löscht nur die Stände dieses Kontos und dieser Seasonphase. */
+    public static void dropStoredPhase(String account, int seasonId, boolean preseason) {
+        FloorKillStore.shared().clear(account, seasonId, preseason);
+        FloorKillsCollector current = active;
+        if (current != null) {
+            current.forgetBound(account, seasonId, preseason);
+        }
+    }
+
+    private void usePhase() {
+        String account = ChatIgnoreList.localAccountId();
+        Integer seasonId = SeasonChangeGate.confirmedSeasonId();
+        if (account == null || seasonId == null) {
+            return;
+        }
+        boolean preseason = CCLiveUtilitiesConfig.HANDLER.instance().lastProcessedPreseason;
+        if (phaseBound && account.equals(boundAccount) && seasonId == boundSeason && preseason == boundPreseason) {
+            return;
+        }
+        boundAccount = account;
+        boundSeason = seasonId;
+        boundPreseason = preseason;
+        phaseBound = true;
+        floorKills.clear();
+        floorKills.putAll(FloorKillStore.shared().floors(account, seasonId, preseason));
+        lastSentAlltimeKills = 0L;
+    }
+
+    private void forgetBound(String account, int seasonId, boolean preseason) {
+        if (phaseBound && account.equals(boundAccount) && seasonId == boundSeason && preseason == boundPreseason) {
+            floorKills.clear();
+            phaseBound = false;
+            lastSentAlltimeKills = 0L;
+        }
     }
     
     @Override

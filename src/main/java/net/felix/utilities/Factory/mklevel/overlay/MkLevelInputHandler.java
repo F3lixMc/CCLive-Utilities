@@ -85,17 +85,16 @@ public final class MkLevelInputHandler {
 		
 		// Check if mouse is over the overlay (excluding search bar area for scrolling)
 		// Coordinates need to account for scaling
-		int searchBarHeight = Math.round(16 * scale);
+		int searchBarHeight = Math.round(MkLevelOverlayRenderer.SEARCH_BAR_HEIGHT * scale);
 		int padding = Math.round(5 * scale);
-		int contentOffset = Math.round(3 * scale); // Shift content 3px up (same as in render)
-		int searchBarY = overlayY + padding - contentOffset; // Shift search bar 3px up
-		int contentY = searchBarY + searchBarHeight + Math.round(2 * scale);
+		int searchBarY = overlayY + Math.round(MkLevelOverlayRenderer.VERTICAL_INSET * scale);
+		int contentY = overlayY + Math.round(MkLevelOverlayRenderer.contentTop() * scale);
 		
 		// Mouse is over overlay if it's in the content area (not search bar) or search bar itself
 		boolean overSearchBar = mouseX >= overlayX + padding && mouseX <= overlayX + overlayWidth - padding &&
 								mouseY >= searchBarY && mouseY <= searchBarY + searchBarHeight;
 		boolean overContent = mouseX >= overlayX && mouseX <= overlayX + overlayWidth &&
-							  mouseY >= contentY && mouseY <= overlayY + overlayHeight - padding;
+							  mouseY >= contentY && mouseY <= overlayY + Math.round(MkLevelOverlayRenderer.contentBottom((int) Math.round(overlayHeight / scale)) * scale);
 		
 		mkLevelOverlayHovered = overSearchBar || overContent;
 	}
@@ -125,11 +124,7 @@ public final class MkLevelInputHandler {
 					bgHeightField.setAccessible(true);
 					int inventoryHeight = bgHeightField.getInt(handledScreen);
 
-					int padding = 5;
-					int searchBarHeight = 16;
-					int contentOffset = 3; // Same as in render
-					// Account for contentOffset in available height calculation
-					int availableHeight = inventoryHeight - padding * 2 - searchBarHeight - 2 - contentOffset;
+					int availableHeight = MkLevelOverlayRenderer.availableContentHeight(inventoryHeight);
 					
 					int[] heights = calculateMkLevelContentHeights(lineHeight);
 					int totalHeight = heights[0];
@@ -140,7 +135,7 @@ public final class MkLevelInputHandler {
 					int[] heights = calculateMkLevelContentHeights(lineHeight);
 					int totalHeight = heights[0];
 					int lastEntryHeight = heights[1];
-					int estimatedAvailableHeight = 166 - 16 - 10 - 3;
+					int estimatedAvailableHeight = MkLevelOverlayRenderer.availableContentHeight(166);
 					int maxScroll = Math.max(0, totalHeight - estimatedAvailableHeight + lastEntryHeight);
 					setMkLevelScrollOffset(Math.min(getMkLevelScrollOffset(), maxScroll));
 				}
@@ -148,7 +143,7 @@ public final class MkLevelInputHandler {
 				int[] heights = calculateMkLevelContentHeights(lineHeight);
 				int totalHeight = heights[0];
 				int lastEntryHeight = heights[1];
-				int estimatedAvailableHeight = 166 - 16 - 10 - 3;
+				int estimatedAvailableHeight = MkLevelOverlayRenderer.availableContentHeight(166);
 				int maxScroll = Math.max(0, totalHeight - estimatedAvailableHeight + lastEntryHeight);
 				setMkLevelScrollOffset(Math.min(getMkLevelScrollOffset(), maxScroll));
 			}
@@ -238,15 +233,14 @@ public final class MkLevelInputHandler {
 		// In render: searchBarX = padding (5), searchBarY = padding - contentOffset (5 - 3 = 2)
 		// These are unscaled coordinates within the matrix, so we need to scale them
 		int unscaledPadding = 5;
-		int unscaledSearchBarHeight = 16;
-		int unscaledContentOffset = 3; // Shift content 3px up (same as in render)
+		int unscaledSearchBarHeight = MkLevelOverlayRenderer.SEARCH_BAR_HEIGHT;
 		int unscaledSearchBarWidth = unscaledWidth - unscaledPadding * 2;
 		
 		// Calculate absolute screen coordinates of search bar
 		// The search bar is rendered at (padding, padding - contentOffset) within the matrix
 		// After transformation: (overlayX + padding * scale, overlayY + (padding - contentOffset) * scale)
 		int searchBarX = overlayX + Math.round(unscaledPadding * scale);
-		int searchBarY = overlayY + Math.round((unscaledPadding - unscaledContentOffset) * scale);
+		int searchBarY = overlayY + Math.round(MkLevelOverlayRenderer.VERTICAL_INSET * scale);
 		int searchBarWidth = Math.round(unscaledSearchBarWidth * scale);
 		int searchBarHeight = Math.round(unscaledSearchBarHeight * scale);
 		
@@ -276,8 +270,8 @@ public final class MkLevelInputHandler {
 		// Check if click is on scrollbar
 		int scrollbarWidth = 6;
 		int scrollbarX = overlayX + Math.round((unscaledWidth - scrollbarWidth - unscaledPadding) * scale);
-		int scrollbarTop = overlayY + Math.round((unscaledPadding - unscaledContentOffset + unscaledSearchBarHeight + 2) * scale);
-		int scrollbarBottom = overlayY + Math.round((unscaledHeight - unscaledPadding) * scale);
+		int scrollbarTop = overlayY + Math.round(MkLevelOverlayRenderer.contentTop() * scale);
+		int scrollbarBottom = overlayY + Math.round(MkLevelOverlayRenderer.contentBottom(unscaledHeight) * scale);
 		int scrollbarHeight = scrollbarBottom - scrollbarTop;
 		
 		if (mouseX >= scrollbarX && mouseX <= scrollbarX + Math.round(scrollbarWidth * scale) &&
@@ -287,7 +281,7 @@ public final class MkLevelInputHandler {
 				// Calculate total content height
 				int lineHeight = 12;
 				int totalContentHeight = calculateMkLevelTotalLineHeight(lineHeight);
-				int availableHeight = unscaledHeight - unscaledPadding * 2 - unscaledSearchBarHeight - 2 - unscaledContentOffset;
+				int availableHeight = MkLevelOverlayRenderer.availableContentHeight(unscaledHeight);
 				
 				if (totalContentHeight > availableHeight) {
 					// Calculate handle size and position
@@ -339,18 +333,15 @@ public final class MkLevelInputHandler {
 		int unscaledHeight = inventoryHeight;
 		int overlayY = (yOffset == -1) ? inventoryY : yOffset;
 		
-		int padding = 5;
 		int lineHeight = 12;
-		int searchBarHeight = 16;
-		int contentOffset = 3;
 		
 		// Calculate scrollbar position
-		int scrollbarTop = overlayY + Math.round((padding - contentOffset + searchBarHeight + 2) * scale);
-		int scrollbarBottom = overlayY + Math.round((unscaledHeight - padding) * scale);
+		int scrollbarTop = overlayY + Math.round(MkLevelOverlayRenderer.contentTop() * scale);
+		int scrollbarBottom = overlayY + Math.round(MkLevelOverlayRenderer.contentBottom(unscaledHeight) * scale);
 		int scrollbarHeight = scrollbarBottom - scrollbarTop;
 		
 		// Calculate total content height
-		int availableHeight = unscaledHeight - padding * 2 - searchBarHeight - 2 - contentOffset;
+		int availableHeight = MkLevelOverlayRenderer.availableContentHeight(unscaledHeight);
 		int totalContentHeight = calculateMkLevelTotalLineHeight(lineHeight);
 		
 		if (totalContentHeight <= availableHeight) {

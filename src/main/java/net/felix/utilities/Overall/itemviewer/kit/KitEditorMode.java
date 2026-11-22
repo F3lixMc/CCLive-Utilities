@@ -35,6 +35,16 @@ public final class KitEditorMode {
 
     public static boolean kitFilterActive = false; // Ob Kit-Filter aktiv ist (Linksklick)
 
+    /** Verkleinert die Ansicht auf die gefilterten Items, solange der Kit-Filter aktiv ist. */
+    public static boolean kitCompact = false;
+
+    /** Anzahl der zuletzt gefilterten Items, Grundlage für die kompakte Fläche. */
+    public static int compactItemCount = 1;
+
+    public static boolean useCompactKit() {
+        return kitFilterActive && kitCompact;
+    }
+
     public static final int KIT_BUTTON_INDEX = 0; // Verwende Kit Button 1 aus KitFilterUtility
 
     // Kit-Editor-Modus (eigenes Kit zusammenstellen)

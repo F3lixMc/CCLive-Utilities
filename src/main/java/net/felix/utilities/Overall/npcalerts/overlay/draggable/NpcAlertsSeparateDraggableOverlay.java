@@ -7,6 +7,7 @@ import net.felix.utilities.Overall.npcalerts.data.MachtkristallSlot;
 import net.felix.utilities.Overall.npcalerts.data.NpcAlertState;
 import net.felix.utilities.Overall.npcalerts.message.ScreenMessages;
 import net.felix.utilities.Overall.npcalerts.overlay.AlertIcons;
+import net.felix.utilities.Overall.npcalerts.overlay.AmbossSlots;
 import net.felix.utilities.Overall.npcalerts.overlay.AlertSettings;
 import net.felix.utilities.Overall.npcalerts.overlay.PercentFormatter;
 import net.minecraft.client.Minecraft;
@@ -103,6 +104,8 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                 return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungScale;
             case "amboss":
                 return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossScale;
+            case "ambossSlot2":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSlot2Scale;
             case "schmelzofen":
                 return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenScale;
             case "jaeger":
@@ -144,6 +147,9 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                 break;
             case "amboss":
                 CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossScale = scale;
+                break;
+            case "ambossSlot2":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSlot2Scale = scale;
                 break;
             case "schmelzofen":
                 CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenScale = scale;
@@ -200,6 +206,9 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
         }
         if ("recycler".equals(configKey)) {
             return measureRecyclerOverlayWidth(client);
+        }
+        if ("amboss".equals(configKey) && AmbossSlots.slot2InSharedOverlay()) {
+            return measureAmbossOverlayWidth(client);
         }
         if (isMachtkristallSlotKey(configKey)) {
             return measureSingleMachtkristallSlotWidth(client);
@@ -290,6 +299,9 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
             lineCount = AlertSettings.getMachtkristallSlotsInSharedOverlay().size();
         } else if ("recycler".equals(configKey)) {
             lineCount = AlertSettings.getRecyclerSlotsInSharedOverlay().size();
+        } else if ("amboss".equals(configKey) && AmbossSlots.slot2InSharedOverlay()) {
+            lineCount = 2;
+            return lineCount * lineHeight + 6 + OVERLAY_PADDING * 2;
         }
         return lineCount * lineHeight + OVERLAY_PADDING * 2;
     }
@@ -427,9 +439,44 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
             drawMachtkristallLines(context, client, showIcon, lineHeight);
         } else if ("recycler".equals(configKey)) {
             drawRecyclerLines(context, client, showIcon, lineHeight);
+        } else if ("amboss".equals(configKey) && AmbossSlots.slot2InSharedOverlay()) {
+            drawAmbossLines(context, client, showIcon, lineHeight);
         } else {
             drawSingleLine(context, client, showIcon, lineHeight);
         }
+    }
+
+    private int measureAmbossOverlayWidth(Minecraft client) {
+        boolean showIcon = isIconVisible(configKey);
+        String first = getDisplayText(configKey, displayName);
+        String second = NpcAlertState.ambossSlot2.getDisplayString();
+        String percentText = isPercentVisible(configKey) ? getPercentText(configKey) : null;
+        int width = iconPrefixWidth(client, showIcon) + Math.max(client.font.width(first), client.font.width(second))
+                + percentSuffixWidth(client, percentText);
+        return width + OVERLAY_PADDING * 2;
+    }
+
+    /** Amboss-Slot 1 mit Label, darunter nur die Menge von Slot 2. */
+    private void drawAmbossLines(GuiGraphicsExtractor context, Minecraft client, boolean showIcon, int lineHeight) {
+        String first = getDisplayText(configKey, displayName);
+        String second = NpcAlertState.ambossSlot2.getDisplayString();
+        int x = OVERLAY_PADDING;
+        int y = OVERLAY_PADDING;
+        Identifier icon = AlertIcons.iconForKey(configKey);
+        if (showIcon && icon != null && blitIcon(context, icon, x, y, lineHeight)) {
+            x += lineHeight + 2;
+            context.text(client.font, ": ", x, y, 0xFFFFFFFF, true);
+            x += client.font.width(": ");
+        }
+        context.text(client.font, first == null ? "" : first, x, y, 0xFFFFFFFF, true);
+        int secondX = OVERLAY_PADDING;
+        int secondY = y + lineHeight + 6;
+        if (showIcon && icon != null && blitIcon(context, icon, secondX, secondY, lineHeight)) {
+            secondX += lineHeight + 2;
+            context.text(client.font, ": ", secondX, secondY, 0xFFFFFFFF, true);
+            secondX += client.font.width(": ");
+        }
+        context.text(client.font, second == null ? "" : second, secondX, secondY, 0xFFFFFFFF, true);
     }
 
     /** Einzeiliges Overlay: optional Icon mit Doppelpunkt, Text und Prozentwert. */

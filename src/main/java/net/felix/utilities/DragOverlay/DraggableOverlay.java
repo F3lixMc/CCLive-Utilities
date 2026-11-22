@@ -103,6 +103,13 @@ public interface DraggableOverlay {
     default boolean isConfigEnabled() {
         return isEnabled();
     }
+
+    /**
+     * Sichtbar und treffbar im F6-Editor. Die Overlay-Liste nutzt weiterhin {@link #isConfigEnabled()}.
+     */
+    default boolean isDrawnInEditor() {
+        return isConfigEnabled();
+    }
     
     /**
      * Gibt den Tooltip-Text für das Overlay zurück

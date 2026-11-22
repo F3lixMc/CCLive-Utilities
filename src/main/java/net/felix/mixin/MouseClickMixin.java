@@ -34,7 +34,7 @@ public class MouseClickMixin {
                 int mouseY = (int) (client.mouseHandler.ypos() * (double) client.getWindow().getGuiScaledHeight() / (double) windowHeight);
                 
                 // Handle clicks on Clipboard Overlay buttons
-                if (net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.handleButtonClick(mouseX, mouseY)) {
+                if (net.felix.utilities.Overall.clipboard.overlay.ClipboardDraggableOverlay.handleButtonClick(mouseX, mouseY)) {
                     // Button wurde geklickt - verhindere weitere Verarbeitung
                     ci.cancel();
                 }
