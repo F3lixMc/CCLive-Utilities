@@ -2,7 +2,7 @@ package net.felix.mixin;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility;
-import net.felix.utilities.DragOverlay.OverlayEditorUtility;
+import net.felix.utilities.DragOverlay.editor.OverlayEditorUtility;
 import net.felix.utilities.Overall.searchbar.SearchBarUtility;
 import net.felix.utilities.Town.schmied.SchmiedTrackerUtility;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -48,7 +48,7 @@ public abstract class SearchBarInputMixin {
         }
         
         // Handle F6 button clicks
-        if (net.felix.utilities.DragOverlay.OverlayEditorButtonUtility.handleButtonClick(mouseX, mouseY, button)) {
+        if (net.felix.utilities.DragOverlay.editor.OverlayEditorButtonUtility.handleButtonClick(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
         }
         

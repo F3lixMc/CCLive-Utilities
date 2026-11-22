@@ -23,7 +23,7 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     
     @Override
     public String dockId() {
-        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.BOSS_HP;
+        return net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.BOSS_HP;
     }
 
     @Override

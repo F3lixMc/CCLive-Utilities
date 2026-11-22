@@ -25,7 +25,7 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
 
     @Override
     public String dockId() {
-        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.COIN;
+        return net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.COIN;
     }
 
     @Override

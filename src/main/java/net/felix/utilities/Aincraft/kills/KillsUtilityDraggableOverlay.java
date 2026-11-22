@@ -24,7 +24,7 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
     
     @Override
     public String dockId() {
-        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.KILLS;
+        return net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.KILLS;
     }
 
     @Override

@@ -210,11 +210,11 @@ public class BPViewerUtility {
                ClientTickEvents.END_CLIENT_TICK.register(client -> {
                    if (client.level != null) {
                        // Handle key bindings
-                       if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
-                           net.felix.utilities.DragOverlay.ModHotkeyGate.discard(toggleKeyMapping);
-                           net.felix.utilities.DragOverlay.ModHotkeyGate.discard(nextRarityKeyMapping);
-                           net.felix.utilities.DragOverlay.ModHotkeyGate.discard(previousRarityKeyMapping);
-                           net.felix.utilities.DragOverlay.ModHotkeyGate.discard(toggleMissingModeKeyMapping);
+                       if (net.felix.utilities.DragOverlay.keybind.DetailKeybindCapture.blocksModHotkeys()) {
+                           net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(toggleKeyMapping);
+                           net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(nextRarityKeyMapping);
+                           net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(previousRarityKeyMapping);
+                           net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(toggleMissingModeKeyMapping);
                        } else {
                        if (toggleKeyMapping.consumeClick()) {
                            toggleVisibility();
@@ -660,8 +660,8 @@ public class BPViewerUtility {
                 // Skaliere basierend auf der Config
                 float scale = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale;
                 if (scale <= 0) scale = 1.0f; // Sicherheitscheck
-                net.felix.utilities.DragOverlay.dock.OverlayDockRect blueprintDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-                        net.felix.utilities.DragOverlay.dock.OverlayDockIds.BLUEPRINT,
+                net.felix.utilities.DragOverlay.dock.model.OverlayDockRect blueprintDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+                        net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.BLUEPRINT,
                         dynamicX, y, Math.round(dynamicWidth * scale), Math.round(dynamicHeight * scale));
                 if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
                     return;
@@ -669,7 +669,7 @@ public class BPViewerUtility {
                 dynamicX = blueprintDock.x();
                 y = blueprintDock.y();
                 scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-                        net.felix.utilities.DragOverlay.dock.OverlayDockIds.BLUEPRINT, scale);
+                        net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.BLUEPRINT, scale);
                 
                 // Übersetze zur Position und skaliere von dort aus
                 Matrix3x2fStack matrices = context.pose();

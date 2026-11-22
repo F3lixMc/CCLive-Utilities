@@ -2,7 +2,7 @@ package net.felix.utilities.Overall.npcalerts.ui;
 
 import java.util.Set;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.OverlayEditorScreen;
+import net.felix.utilities.DragOverlay.editor.OverlayEditorScreen;
 import net.felix.utilities.Other.keybinding.NumericFieldInput;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;

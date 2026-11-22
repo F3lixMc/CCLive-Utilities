@@ -301,8 +301,8 @@ public final class CollectionTracker {
 	 * Handles collection hotkeys
 	 */
 	public static void handleCollectionHotkeys() {
-		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
-			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(collectionResetKeyMapping);
+		if (net.felix.utilities.DragOverlay.keybind.DetailKeybindCapture.blocksModHotkeys()) {
+			net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(collectionResetKeyMapping);
 			return;
 		}
 		// Handle reset hotkey

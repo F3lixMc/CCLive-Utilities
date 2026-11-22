@@ -21,7 +21,7 @@ public class AspectDraggableOverlay implements DraggableOverlay {
     
     @Override
     public String dockId() {
-        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.ASPECT;
+        return net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.ASPECT;
     }
 
     @Override

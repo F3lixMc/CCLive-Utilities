@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.OverlayEditorScreen;
+import net.felix.utilities.DragOverlay.editor.OverlayEditorScreen;
 import net.felix.utilities.DragOverlay.OverlayType;
 import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.felix.utilities.Other.keybinding.KeyBindingUtility;

@@ -65,13 +65,13 @@ public final class MainOverlayRenderer {
 		int screenWidth = client.getWindow().getGuiScaledWidth();
 		int posX = OverlayLayout.computeOverlayX(config.npcAlertsMainOverlayX, overlayWidth, screenWidth);
 		int posY = config.npcAlertsMainOverlayY;
-		net.felix.utilities.DragOverlay.dock.OverlayDockRect npcDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.NPC_MAIN, posX, posY, overlayWidth, overlayHeight);
+		net.felix.utilities.DragOverlay.dock.model.OverlayDockRect npcDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.NPC_MAIN, posX, posY, overlayWidth, overlayHeight);
 		if (!net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
 			posX = npcDock.x();
 			posY = npcDock.y();
 			scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-					net.felix.utilities.DragOverlay.dock.OverlayDockIds.NPC_MAIN, scale);
+					net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.NPC_MAIN, scale);
 			if (config.npcAlertsMainOverlayShowBackground) {
 				context.fill(posX, posY, posX + npcDock.w(), posY + npcDock.h(), 0x80000000);
 			}

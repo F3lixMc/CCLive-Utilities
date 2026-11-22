@@ -1,5 +1,9 @@
 package net.felix.utilities.DragOverlay.dock;
 
+import net.felix.utilities.DragOverlay.dock.model.OverlayDockRect;
+import net.felix.utilities.DragOverlay.dock.resolve.OverlayDockEngine;
+import net.felix.utilities.DragOverlay.dock.resolve.OverlayDockScreenFit;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,7 +14,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import net.felix.utilities.DragOverlay.DraggableOverlay;
-import net.felix.utilities.DragOverlay.OverlayEditorUtility;
+import net.felix.utilities.DragOverlay.editor.OverlayEditorUtility;
 import net.minecraft.client.Minecraft;
 
 /**
@@ -39,9 +43,6 @@ public final class OverlayDockLayout {
 			this.drawn = drawn;
 		}
 
-		private OverlayDockRect rect() {
-			return new OverlayDockRect(x, y, w, h);
-		}
 
 		@Override
 		public boolean equals(Object other) {
@@ -67,9 +68,9 @@ public final class OverlayDockLayout {
 	private static Map<String, OverlayDockRect> cache;
 	private static Map<String, OverlayDockRect> liveVisual = new LinkedHashMap<>();
 	private static Map<String, Float> liveFactors = new LinkedHashMap<>();
-	private static Map<String, OverlayScreenFit.Pin> livePins = new LinkedHashMap<>();
+	private static Map<String, OverlayDockScreenFit.Pin> livePins = new LinkedHashMap<>();
 	private static Map<String, Float> editorFactors = new LinkedHashMap<>();
-	private static Map<String, OverlayScreenFit.Pin> editorPins = new LinkedHashMap<>();
+	private static Map<String, OverlayDockScreenFit.Pin> editorPins = new LinkedHashMap<>();
 	private static boolean measuring;
 	private static boolean prepared;
 	private static String skipId;
@@ -158,13 +159,13 @@ public final class OverlayDockLayout {
 		measuring = true;
 		reports.clear();
 		try {
-			OverlayMeasures.collect();
+			OverlayDockMeasures.collect();
 		} finally {
 			measuring = false;
 		}
 		int screenW = screenWidth();
 		int screenH = screenHeight();
-		OverlayScreenFit.Fit fit = OverlayDockEngine.resolveFitted(
+		OverlayDockScreenFit.Fit fit = OverlayDockEngine.resolveFitted(
 				reports, OverlayDockStore.links(), null, screenW, screenH, livePins);
 		liveVisual = fit.rects();
 		liveFactors = fit.factors();
@@ -327,7 +328,7 @@ public final class OverlayDockLayout {
 			}
 			desired.put(sample.id, new OverlayDockRect(sample.x, sample.y, w, h));
 		}
-		OverlayScreenFit.Fit fit = OverlayDockEngine.resolveFitted(
+		OverlayDockScreenFit.Fit fit = OverlayDockEngine.resolveFitted(
 				desired, OverlayDockStore.links(), skipId, screenW, screenH, editor ? editorPins : livePins);
 		cache = fit.rects();
 		if (editor) {
@@ -344,20 +345,6 @@ public final class OverlayDockLayout {
 			return sample.drawn;
 		}
 		return runtimeVisible(sample.id, sample.drawn);
-	}
-
-	private static boolean participates(String id) {
-		Sample sample = samples.get(id);
-		if (sample == null) {
-			return false;
-		}
-		if (id.equals(skipId)) {
-			return true;
-		}
-		if (OverlayEditorUtility.isOverlayEditorOpen()) {
-			return sample.drawn;
-		}
-		return runtimeVisible(id, sample.drawn);
 	}
 
 	private static boolean runtimeVisible(String id, boolean sampleDrawn) {

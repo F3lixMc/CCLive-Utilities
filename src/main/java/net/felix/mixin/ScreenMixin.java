@@ -39,7 +39,7 @@ public class ScreenMixin {
      */
     @Inject(method = "extractTransparentBackground", at = @At("HEAD"), cancellable = true)
     private void cclive$renderOverlaysBehindDim(GuiGraphicsExtractor context, CallbackInfo ci) {
-        if (net.felix.utilities.DragOverlay.F6MenuBackground.suppressUnderlyingDim()) {
+        if (net.felix.utilities.DragOverlay.editor.F6MenuBackground.suppressUnderlyingDim()) {
             ci.cancel();
             return;
         }
@@ -51,7 +51,7 @@ public class ScreenMixin {
      */
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
     private void onKeyPressed(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
-        if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+        if (net.felix.utilities.DragOverlay.keybind.DetailKeybindCapture.blocksModHotkeys()) {
             return;
         }
         int keyCode = event.key();
@@ -163,8 +163,8 @@ public class ScreenMixin {
             ViewerRenderer.renderMinimizedButtonIfNeeded(context);
             
             // Render F6 button (bottom left corner)
-            if (net.felix.utilities.DragOverlay.OverlayEditorButtonUtility.shouldShowButton(handledScreen)) {
-                net.felix.utilities.DragOverlay.OverlayEditorButtonUtility.renderButton(context, handledScreen, mouseX, mouseY);
+            if (net.felix.utilities.DragOverlay.editor.OverlayEditorButtonUtility.shouldShowButton(handledScreen)) {
+                net.felix.utilities.DragOverlay.editor.OverlayEditorButtonUtility.renderButton(context, handledScreen, mouseX, mouseY);
             }
             
             return;

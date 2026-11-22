@@ -60,15 +60,15 @@ public final class SingleInfoOverlayRenderer {
 		int overlayHeight = Math.round(unscaledHeight * scale);
 		int posX = OverlayLayout.computeOverlayX(xPosition, overlayWidth, client.getWindow().getGuiScaledWidth());
 		int posY = yPosition;
-		net.felix.utilities.DragOverlay.dock.OverlayDockRect separateDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.npc(configKey), posX, posY, overlayWidth, overlayHeight);
+		net.felix.utilities.DragOverlay.dock.model.OverlayDockRect separateDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.npc(configKey), posX, posY, overlayWidth, overlayHeight);
 		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
 			return;
 		}
 		posX = separateDock.x();
 		posY = separateDock.y();
 		scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.npc(configKey), scale);
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.npc(configKey), scale);
 		if (showBackground) {
 			context.fill(posX, posY, posX + separateDock.w(), posY + separateDock.h(), 0x80000000);
 		}
@@ -143,15 +143,15 @@ public final class SingleInfoOverlayRenderer {
 		int screenWidth = client.getWindow().getGuiScaledWidth();
 		int posX = OverlayLayout.computeOverlayX(xPosition, overlayWidth, screenWidth);
 		int posY = yPosition;
-		net.felix.utilities.DragOverlay.dock.OverlayDockRect separateDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.npc(configKey), posX, posY, overlayWidth, overlayHeight);
+		net.felix.utilities.DragOverlay.dock.model.OverlayDockRect separateDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.npc(configKey), posX, posY, overlayWidth, overlayHeight);
 		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
 			return;
 		}
 		posX = separateDock.x();
 		posY = separateDock.y();
 		scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.npc(configKey), scale);
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.npc(configKey), scale);
 
 		if (showBackground) {
 			context.fill(posX, posY, posX + separateDock.w(), posY + separateDock.h(), 0x80000000);

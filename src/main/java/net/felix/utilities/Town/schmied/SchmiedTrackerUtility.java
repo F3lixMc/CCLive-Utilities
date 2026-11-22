@@ -79,9 +79,9 @@ public class SchmiedTrackerUtility {
 	private static boolean editorBarOwnsThisKey() {
 		Minecraft client = Minecraft.getInstance();
 		return client != null
-				&& client.gui.screen() instanceof net.felix.utilities.DragOverlay.OverlayEditorScreen
+				&& client.gui.screen() instanceof net.felix.utilities.DragOverlay.editor.OverlayEditorScreen
 				&& toggleFramesKeyMapping != null
-				&& net.felix.utilities.DragOverlay.OverlayEditorUtility.editorBarUsesKey(InputConstants.KEY_F7)
+				&& net.felix.utilities.DragOverlay.editor.OverlayEditorUtility.editorBarUsesKey(InputConstants.KEY_F7)
 				&& toggleFramesKeyMapping.matches(new net.minecraft.client.input.KeyEvent(InputConstants.KEY_F7, -1, 0));
 	}
 	
@@ -193,8 +193,8 @@ public class SchmiedTrackerUtility {
 			framesKeyMigrationChecked = true;
 			applyFramesKeyMigration();
 		}
-		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
-			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(toggleFramesKeyMapping);
+		if (net.felix.utilities.DragOverlay.keybind.DetailKeybindCapture.blocksModHotkeys()) {
+			net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(toggleFramesKeyMapping);
 		} else if (toggleFramesKeyMapping != null && toggleFramesKeyMapping.consumeClick()) {
 			if (!editorBarOwnsThisKey()) {
 				framesVisible = !framesVisible;
@@ -1095,7 +1095,7 @@ public class SchmiedTrackerUtility {
 	 * @return true if the key was handled
 	 */
 	public static boolean handleKeyPress(int keyCode) {
-		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+		if (net.felix.utilities.DragOverlay.keybind.DetailKeybindCapture.blocksModHotkeys()) {
 			return false;
 		}
 		try {

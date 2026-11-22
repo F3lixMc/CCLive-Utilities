@@ -135,9 +135,9 @@ public class ItemInfoUtility {
 	}
 	
 	private static void onClientTick(Minecraft client) {
-		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
-			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(extractKeyMapping);
-			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(autoClickKeyMapping);
+		if (net.felix.utilities.DragOverlay.keybind.DetailKeybindCapture.blocksModHotkeys()) {
+			net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(extractKeyMapping);
+			net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(autoClickKeyMapping);
 		} else if (extractKeyMapping != null && extractKeyMapping.consumeClick()) {
 			extractItemInfo(client);
 		}
@@ -190,7 +190,7 @@ public class ItemInfoUtility {
 	 * Called from SearchBarInputMixin
 	 */
 	public static boolean handleKeyPress(int keyCode) {
-		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+		if (net.felix.utilities.DragOverlay.keybind.DetailKeybindCapture.blocksModHotkeys()) {
 			return false;
 		}
 		if (extractKeyMapping == null) {
@@ -221,7 +221,7 @@ public class ItemInfoUtility {
 	 * @param screenY Y position of the screen (from mixin)
 	 */
 	public static boolean handleAutoClickKeyPress(int keyCode, int screenX, int screenY) {
-		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+		if (net.felix.utilities.DragOverlay.keybind.DetailKeybindCapture.blocksModHotkeys()) {
 			return false;
 		}
 		if (autoClickKeyMapping == null) {

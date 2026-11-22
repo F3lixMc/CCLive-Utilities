@@ -21,7 +21,7 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
 
     @Override
     public String dockId() {
-        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.BLUEPRINT;
+        return net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.BLUEPRINT;
     }
 
     @Override

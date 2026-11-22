@@ -82,8 +82,8 @@ public final class MkLevelInputHandler {
 		// Y-Position: Wenn yOffset -1 ist (Standard), verwende die Inventar-Y-Position
 		// Ansonsten verwende die absolute Y-Position aus der Config
 		int overlayY = (yOffset == -1) ? inventoryY : yOffset;
-		net.felix.utilities.DragOverlay.dock.OverlayDockRect mkDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MK_LEVEL, overlayX, overlayY, overlayWidth, overlayHeight);
+		net.felix.utilities.DragOverlay.dock.model.OverlayDockRect mkDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.MK_LEVEL, overlayX, overlayY, overlayWidth, overlayHeight);
 		overlayX = mkDock.x();
 		overlayY = mkDock.y();
 		
@@ -211,8 +211,8 @@ public final class MkLevelInputHandler {
 		
 		// Use the same unscaledHeight as in render (inventoryHeight)
 		int unscaledHeight = inventoryHeight;
-		net.felix.utilities.DragOverlay.dock.OverlayDockRect mkDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MK_LEVEL,
+		net.felix.utilities.DragOverlay.dock.model.OverlayDockRect mkDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.MK_LEVEL,
 				overlayX, overlayY, overlayWidth, Math.round(unscaledHeight * scale));
 		overlayX = mkDock.x();
 		overlayY = mkDock.y();

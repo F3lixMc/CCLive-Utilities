@@ -21,7 +21,7 @@ public class StarAspectDraggableOverlay implements DraggableOverlay {
     
     @Override
     public String dockId() {
-        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.STAR_ASPECT;
+        return net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.STAR_ASPECT;
     }
 
     @Override

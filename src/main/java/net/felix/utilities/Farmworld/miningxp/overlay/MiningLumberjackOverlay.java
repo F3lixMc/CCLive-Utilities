@@ -137,7 +137,7 @@ public final class MiningLumberjackOverlay {
 		int padding = 5;
 		int lineHeight = 12;
 		int lines = 5;
-		int overlayHeight = net.felix.utilities.DragOverlay.OverlayInsets.heightForLines(padding, lineHeight, client.font.lineHeight, lines);
+		int overlayHeight = net.felix.utilities.DragOverlay.editor.OverlayInsets.heightForLines(padding, lineHeight, client.font.lineHeight, lines);
 		int minOverlayWidth = 100;
 		
 		// Calculate text width
@@ -175,8 +175,8 @@ public final class MiningLumberjackOverlay {
 		// Get scale
 		float scale = config.miningLumberjackOverlayScale;
 		if (scale <= 0) scale = 1.0f;
-		net.felix.utilities.DragOverlay.dock.OverlayDockRect miningDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MINING,
+		net.felix.utilities.DragOverlay.dock.model.OverlayDockRect miningDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.MINING,
 				x, y, Math.round(overlayWidth * scale), Math.round(overlayHeight * scale));
 		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
 			return;
@@ -184,7 +184,7 @@ public final class MiningLumberjackOverlay {
 		x = miningDock.x();
 		y = miningDock.y();
 		scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MINING, scale);
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.MINING, scale);
 		
 		// Apply matrix transformations for scaling
 		var matrices = context.pose();
@@ -235,7 +235,7 @@ public final class MiningLumberjackOverlay {
 		int padding = 5;
 		int lineHeight = 12;
 		int lines = 5;
-		int overlayHeight = net.felix.utilities.DragOverlay.OverlayInsets.heightForLines(padding, lineHeight, client.font.lineHeight, lines);
+		int overlayHeight = net.felix.utilities.DragOverlay.editor.OverlayInsets.heightForLines(padding, lineHeight, client.font.lineHeight, lines);
 		int minOverlayWidth = 100;
 		
 		// Calculate text width
@@ -273,8 +273,8 @@ public final class MiningLumberjackOverlay {
 		// Get scale
 		float scale = config.miningLumberjackOverlayScale;
 		if (scale <= 0) scale = 1.0f;
-		net.felix.utilities.DragOverlay.dock.OverlayDockRect miningDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MINING,
+		net.felix.utilities.DragOverlay.dock.model.OverlayDockRect miningDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.MINING,
 				x, y, Math.round(overlayWidth * scale), Math.round(overlayHeight * scale));
 		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
 			return;
@@ -282,7 +282,7 @@ public final class MiningLumberjackOverlay {
 		x = miningDock.x();
 		y = miningDock.y();
 		scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MINING, scale);
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.MINING, scale);
 		
 		// Apply matrix transformations for scaling
 		var matrices = context.pose();

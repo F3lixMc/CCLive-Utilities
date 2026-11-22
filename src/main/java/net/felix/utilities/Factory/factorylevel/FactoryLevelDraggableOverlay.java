@@ -17,7 +17,7 @@ public class FactoryLevelDraggableOverlay implements DraggableOverlay {
 
     @Override
     public String dockId() {
-        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.FACTORY;
+        return net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.FACTORY;
     }
 
     @Override

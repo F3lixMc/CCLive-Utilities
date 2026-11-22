@@ -310,7 +310,7 @@ public abstract class HandledScreenMixin {
         }
         
         // Handle clicks on F6 button
-        if (net.felix.utilities.DragOverlay.OverlayEditorButtonUtility.handleButtonClick(mouseX, mouseY, button)) {
+        if (net.felix.utilities.DragOverlay.editor.OverlayEditorButtonUtility.handleButtonClick(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
         }
 
@@ -693,9 +693,9 @@ public abstract class HandledScreenMixin {
             AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
             
             // Prüfe ob Button angezeigt werden soll
-            if (net.felix.utilities.DragOverlay.OverlayEditorButtonUtility.shouldShowButton(screen)) {
+            if (net.felix.utilities.DragOverlay.editor.OverlayEditorButtonUtility.shouldShowButton(screen)) {
                 // Call the OverlayEditorButtonUtility to render the button
-                net.felix.utilities.DragOverlay.OverlayEditorButtonUtility.renderButton(context, screen, mouseX, mouseY);
+                net.felix.utilities.DragOverlay.editor.OverlayEditorButtonUtility.renderButton(context, screen, mouseX, mouseY);
             }
             
         } catch (Exception e) {

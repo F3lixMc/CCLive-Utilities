@@ -22,7 +22,7 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
     
     @Override
     public String dockId() {
-        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.MINING;
+        return net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.MINING;
     }
 
     @Override
@@ -132,7 +132,7 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
     private int calculateUnscaledHeight() {
         Minecraft client = Minecraft.getInstance();
         int fontHeight = client != null && client.font != null ? client.font.lineHeight : 9;
-        return net.felix.utilities.DragOverlay.OverlayInsets.heightForLines(PADDING, LINE_HEIGHT, fontHeight, 5);
+        return net.felix.utilities.DragOverlay.editor.OverlayInsets.heightForLines(PADDING, LINE_HEIGHT, fontHeight, 5);
     }
     
     @Override

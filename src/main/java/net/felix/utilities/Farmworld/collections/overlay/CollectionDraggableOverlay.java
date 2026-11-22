@@ -24,7 +24,7 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
     
     @Override
     public String dockId() {
-        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.COLLECTION;
+        return net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.COLLECTION;
     }
 
     @Override

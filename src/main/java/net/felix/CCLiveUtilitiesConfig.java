@@ -13,9 +13,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import net.felix.utilities.Aincraft.cointracker.CoinTrackerDisplayMode;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerDisplayMode;
-import net.felix.utilities.DragOverlay.F6ButtonPlace;
-import net.felix.utilities.DragOverlay.dock.OverlayDockLink;
-import net.felix.utilities.DragOverlay.F6TransparencyPreview;
+import net.felix.utilities.DragOverlay.editor.F6ButtonPlace;
+import net.felix.utilities.DragOverlay.dock.model.OverlayDockLink;
+import net.felix.utilities.DragOverlay.editor.F6TransparencyPreview;
 import net.felix.utilities.DragOverlay.OverlayType;
 import net.felix.utilities.Farmworld.collections.tracker.ResourceTrackerDisplayMode;
 import net.felix.utilities.Other.hud.RateDisplayUnit;
@@ -2020,11 +2020,11 @@ public class CCLiveUtilitiesConfig {
     }
 
     public static int f6BackgroundAlpha(int percent) {
-        return net.felix.utilities.DragOverlay.F6MenuBackground.alpha(percent);
+        return net.felix.utilities.DragOverlay.editor.F6MenuBackground.alpha(percent);
     }
 
     public static int f6MenuBackgroundColor() {
-        return net.felix.utilities.DragOverlay.F6MenuBackground.color(HANDLER.instance().f6MenuBackgroundTransparency);
+        return net.felix.utilities.DragOverlay.editor.F6MenuBackground.color(HANDLER.instance().f6MenuBackgroundTransparency);
     }
 
     private static OptionGroup buildF6MenuGroup() {

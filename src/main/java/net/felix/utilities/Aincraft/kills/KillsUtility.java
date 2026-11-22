@@ -194,9 +194,9 @@ public class KillsUtility {
 	}
 
 	private static void handleHotkeys() {
-		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
-			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(toggleKeyMapping);
-			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(resetKeyMapping);
+		if (net.felix.utilities.DragOverlay.keybind.DetailKeybindCapture.blocksModHotkeys()) {
+			net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(toggleKeyMapping);
+			net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(resetKeyMapping);
 			return;
 		}
 		// Handle toggle hotkey
@@ -671,8 +671,8 @@ public class KillsUtility {
 		// Skaliere basierend auf der Config
 		float scale = CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityScale;
 		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
-		net.felix.utilities.DragOverlay.dock.OverlayDockRect killsDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.KILLS,
+		net.felix.utilities.DragOverlay.dock.model.OverlayDockRect killsDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.KILLS,
 				xPosition, yPosition, Math.round(overlayWidth * scale), Math.round(overlayHeight * scale));
 		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
 			return;
@@ -680,7 +680,7 @@ public class KillsUtility {
 		xPosition = killsDock.x();
 		yPosition = killsDock.y();
 		scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.KILLS, scale);
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.KILLS, scale);
 		
 		// Übersetze zur Position und skaliere von dort aus
 		Matrix3x2fStack matrices = context.pose();

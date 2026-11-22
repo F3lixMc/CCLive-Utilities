@@ -162,10 +162,10 @@ public class ClipboardUtility {
             // Prüfe Clipboard-Toggle Hotkey (funktioniert sowohl im HUD als auch in Screens)
             // Im HUD: wasPressed() funktioniert direkt (wie bei KillsUtility und BPViewerUtility)
             // In Screens: wird über ScreenMixin.handleKeyPress behandelt
-            if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
-                net.felix.utilities.DragOverlay.ModHotkeyGate.discard(toggleClipboardKeyMapping);
-                net.felix.utilities.DragOverlay.ModHotkeyGate.discard(previousPageKeyMapping);
-                net.felix.utilities.DragOverlay.ModHotkeyGate.discard(nextPageKeyMapping);
+            if (net.felix.utilities.DragOverlay.keybind.DetailKeybindCapture.blocksModHotkeys()) {
+                net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(toggleClipboardKeyMapping);
+                net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(previousPageKeyMapping);
+                net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(nextPageKeyMapping);
             } else if (toggleClipboardKeyMapping != null && toggleClipboardKeyMapping.consumeClick()) {
                 // Prüfe ob ein Textfeld fokussiert ist (Chat, etc.) - ignoriere dann den Hotkey
                 if (client.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen) {
@@ -183,9 +183,9 @@ public class ClipboardUtility {
     }
 
     private static void handlePageHotkeys(net.minecraft.client.Minecraft client) {
-        if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
-            net.felix.utilities.DragOverlay.ModHotkeyGate.discard(previousPageKeyMapping);
-            net.felix.utilities.DragOverlay.ModHotkeyGate.discard(nextPageKeyMapping);
+        if (net.felix.utilities.DragOverlay.keybind.DetailKeybindCapture.blocksModHotkeys()) {
+            net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(previousPageKeyMapping);
+            net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(nextPageKeyMapping);
             return;
         }
         if (!canHandleClipboardPageHotkeys(client)) {
@@ -280,7 +280,7 @@ public class ClipboardUtility {
      * @return true wenn der Key behandelt wurde
      */
     public static boolean handleKeyPress(int keyCode, int scanCode) {
-        if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+        if (net.felix.utilities.DragOverlay.keybind.DetailKeybindCapture.blocksModHotkeys()) {
             return false;
         }
         try {

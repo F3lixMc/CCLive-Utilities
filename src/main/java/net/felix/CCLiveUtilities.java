@@ -16,7 +16,7 @@ import net.felix.utilities.Aincraft.kills.DamageTrackingUtility;
 import net.felix.utilities.Aincraft.kills.KillAnimationUtility;
 import net.felix.utilities.Aincraft.kills.KillsUtility;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerUtility;
-import net.felix.utilities.DragOverlay.OverlayEditorUtility;
+import net.felix.utilities.DragOverlay.editor.OverlayEditorUtility;
 import net.felix.utilities.Factory.bosshp.BossHPUtility;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelTracker;
 import net.felix.utilities.Other.update.UpdateCheckerUtility;

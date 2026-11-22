@@ -184,9 +184,9 @@ public final class ItemViewerHotkeys {
      * (bei offenem Screen greift {@link #handleKeyPress(int, int, int)} über den ScreenMixin).
      */
     public static void onClientTick(Minecraft client) {
-        if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
-            net.felix.utilities.DragOverlay.ModHotkeyGate.discard(toggleKeyMapping);
-            net.felix.utilities.DragOverlay.ModHotkeyGate.discard(clipboardPinKeyMapping);
+        if (net.felix.utilities.DragOverlay.keybind.DetailKeybindCapture.blocksModHotkeys()) {
+            net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(toggleKeyMapping);
+            net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(clipboardPinKeyMapping);
             return;
         }
         if (toggleKeyMapping != null && toggleKeyMapping.consumeClick()) {
@@ -227,7 +227,7 @@ public final class ItemViewerHotkeys {
      * @return true wenn der Keybind behandelt wurde, false sonst
      */
     public static boolean handleKeyPress(int keyCode, int scanCode, int modifiers) {
-        if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+        if (net.felix.utilities.DragOverlay.keybind.DetailKeybindCapture.blocksModHotkeys()) {
             return false;
         }
         Minecraft client = Minecraft.getInstance();

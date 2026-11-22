@@ -34,7 +34,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
 
     @Override
     public String dockId() {
-        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.NPC_MAIN;
+        return net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.NPC_MAIN;
     }
 
     @Override

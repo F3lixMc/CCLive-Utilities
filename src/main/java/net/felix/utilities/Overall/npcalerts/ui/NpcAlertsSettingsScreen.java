@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.OverlayEditorScreen;
+import net.felix.utilities.DragOverlay.editor.OverlayEditorScreen;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;

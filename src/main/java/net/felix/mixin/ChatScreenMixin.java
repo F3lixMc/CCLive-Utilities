@@ -6,7 +6,7 @@ import net.felix.Community.chat.ChatManager;
 import net.felix.Community.chat.share.ItemShareManager;
 import net.felix.Community.profile.ProfileStatsManager;
 import net.felix.Community.staff.StaffClientAccess;
-import net.felix.utilities.DragOverlay.OverlayEditorUtility;
+import net.felix.utilities.DragOverlay.editor.OverlayEditorUtility;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.input.KeyEvent;

@@ -21,7 +21,7 @@ public class ChatAspectOverlayDraggableOverlay implements DraggableOverlay {
     
     @Override
     public String dockId() {
-        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.CHAT_ASPECT;
+        return net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.CHAT_ASPECT;
     }
 
     @Override

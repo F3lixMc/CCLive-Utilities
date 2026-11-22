@@ -250,9 +250,9 @@ public class MaterialTrackerUtility {
 	}
 
 	private static void handleHotkey() {
-		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
-			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(toggleKeyMapping);
-			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(resetRateKeyMapping);
+		if (net.felix.utilities.DragOverlay.keybind.DetailKeybindCapture.blocksModHotkeys()) {
+			net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(toggleKeyMapping);
+			net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(resetRateKeyMapping);
 			return;
 		}
 		// Handle toggle hotkey
@@ -350,8 +350,8 @@ public class MaterialTrackerUtility {
 		
 		// Scale based on config
 		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
-		net.felix.utilities.DragOverlay.dock.OverlayDockRect materialDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MATERIAL,
+		net.felix.utilities.DragOverlay.dock.model.OverlayDockRect materialDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.MATERIAL,
 				xPosition, yPosition, Math.round(overlayWidth * scale), Math.round((OVERLAY_HEIGHT - 23) * scale));
 		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
 			return;
@@ -359,7 +359,7 @@ public class MaterialTrackerUtility {
 		xPosition = materialDock.x();
 		yPosition = materialDock.y();
 		scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MATERIAL, scale);
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.MATERIAL, scale);
 		
 		// Translate to position and scale from there
 		Matrix3x2fStack matrices = context.pose();
@@ -492,8 +492,8 @@ public class MaterialTrackerUtility {
 		
 		// Scale based on config
 		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
-		net.felix.utilities.DragOverlay.dock.OverlayDockRect materialDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MATERIAL,
+		net.felix.utilities.DragOverlay.dock.model.OverlayDockRect materialDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.MATERIAL,
 				xPosition, yPosition, Math.round(overlayWidth * scale), Math.round((OVERLAY_HEIGHT - 23) * scale));
 		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
 			return;
@@ -501,7 +501,7 @@ public class MaterialTrackerUtility {
 		xPosition = materialDock.x();
 		yPosition = materialDock.y();
 		scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MATERIAL, scale);
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.MATERIAL, scale);
 		
 		// Translate to position and scale from there
 		Matrix3x2fStack matrices = context.pose();

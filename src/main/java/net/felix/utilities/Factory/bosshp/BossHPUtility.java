@@ -809,8 +809,8 @@ public class BossHPUtility {
 		}
 		
 		int posY = y;
-		net.felix.utilities.DragOverlay.dock.OverlayDockRect bossDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.BOSS_HP,
+		net.felix.utilities.DragOverlay.dock.model.OverlayDockRect bossDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.BOSS_HP,
 				posX, posY, overlayWidth, Math.round(totalHeight * scale));
 		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
 			return;
@@ -818,7 +818,7 @@ public class BossHPUtility {
 		posX = bossDock.x();
 		posY = bossDock.y();
 		scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.BOSS_HP, scale);
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.BOSS_HP, scale);
 		
 		// Verwende Matrix-Transformationen für Skalierung
 		Matrix3x2fStack matrices = context.pose();

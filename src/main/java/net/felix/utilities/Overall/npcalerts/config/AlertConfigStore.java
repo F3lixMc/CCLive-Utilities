@@ -1,7 +1,7 @@
 package net.felix.utilities.Overall.npcalerts.config;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.OverlayEditorScreen;
+import net.felix.utilities.DragOverlay.editor.OverlayEditorScreen;
 import net.minecraft.client.gui.screens.Screen;
 
 /**

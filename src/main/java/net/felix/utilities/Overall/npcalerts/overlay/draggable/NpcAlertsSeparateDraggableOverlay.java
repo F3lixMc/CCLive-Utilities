@@ -60,7 +60,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
 
     @Override
     public String dockId() {
-        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.npc(configKey);
+        return net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.npc(configKey);
     }
 
     @Override

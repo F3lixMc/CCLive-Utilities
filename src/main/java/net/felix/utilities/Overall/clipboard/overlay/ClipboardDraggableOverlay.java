@@ -433,7 +433,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         String statusMessage = ClipboardTargetTime.statusText(hasEntries, fullNormalLines.size(), mainCostLines.size());
         int lineCount = computeLineCount(page, mainCostLines, shopCostLines, statusMessage);
         int lineHeight = client.font.lineHeight + 2;
-        int maxUnscaledHeight = net.felix.utilities.DragOverlay.OverlayInsets.heightForLines(
+        int maxUnscaledHeight = net.felix.utilities.DragOverlay.editor.OverlayInsets.heightForLines(
                 5, lineHeight, client.font.lineHeight, maxLineCount);
 
         cachedRenderSnapshot = new RenderSnapshot(
@@ -674,7 +674,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     
     @Override
     public String dockId() {
-        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.CLIPBOARD;
+        return net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.CLIPBOARD;
     }
 
     @Override
@@ -1083,7 +1083,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         int lineHeight = client.font.lineHeight + 2;
         int padding = 5;
         int estimatedLineCount = snapshot.lineCount;
-        int estimatedHeight = net.felix.utilities.DragOverlay.OverlayInsets.heightForLines(
+        int estimatedHeight = net.felix.utilities.DragOverlay.editor.OverlayInsets.heightForLines(
                 padding, lineHeight, client.font.lineHeight, estimatedLineCount);
         int unscaledWidthForOrigin = snapshot.renderWidth;
         int scaledWidth = Math.round(unscaledWidthForOrigin * scale);
@@ -1099,7 +1099,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         int x = origin.x();
         int y = origin.y();
         scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-                net.felix.utilities.DragOverlay.dock.OverlayDockIds.CLIPBOARD, scale);
+                net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.CLIPBOARD, scale);
         costOverlayMaxScaledHeight = footprintHeight;
         
         // Render content with scale using matrix transformation
@@ -1289,7 +1289,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         drawCostOverflow(context, snapshot, isInInventory, unscaledWidth, normalStartY, normalEndY, scale, x, y);
         
         // Berechne tatsächliche Höhe basierend auf gerenderten Zeilen
-        int actualHeight = net.felix.utilities.DragOverlay.OverlayInsets.heightForLines(
+        int actualHeight = net.felix.utilities.DragOverlay.editor.OverlayInsets.heightForLines(
                 padding, lineHeight, client.font.lineHeight, lineCount);
         
         matrices.popMatrix();
@@ -2131,10 +2131,9 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     }
 
     private static ClipboardLayout.Point screenOrigin(Minecraft client, int scaledWidth, int footprintHeight) {
-        int screenWidth = client.getWindow().getGuiScaledWidth();
-        int screenHeight = client.getWindow().getGuiScaledHeight();
-        net.felix.utilities.DragOverlay.dock.OverlayDockRect placed = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-                net.felix.utilities.DragOverlay.dock.OverlayDockIds.CLIPBOARD,
+
+        net.felix.utilities.DragOverlay.dock.model.OverlayDockRect placed = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+                net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.CLIPBOARD,
                 CCLiveUtilitiesConfig.HANDLER.instance().clipboardX,
                 CCLiveUtilitiesConfig.HANDLER.instance().clipboardY,
                 scaledWidth, footprintHeight);

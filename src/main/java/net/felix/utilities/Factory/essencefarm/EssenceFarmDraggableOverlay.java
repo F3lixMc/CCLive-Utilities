@@ -17,7 +17,7 @@ public class EssenceFarmDraggableOverlay implements DraggableOverlay {
 
 	@Override
 	public String dockId() {
-		return net.felix.utilities.DragOverlay.dock.OverlayDockIds.ESSENCE;
+		return net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.ESSENCE;
 	}
 
 	@Override

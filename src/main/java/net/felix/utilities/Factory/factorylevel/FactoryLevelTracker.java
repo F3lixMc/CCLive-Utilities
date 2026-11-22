@@ -103,14 +103,14 @@ public final class FactoryLevelTracker {
             scale = 1f;
         }
 
-        net.felix.utilities.DragOverlay.dock.OverlayDockRect factoryDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-                net.felix.utilities.DragOverlay.dock.OverlayDockIds.FACTORY,
+        net.felix.utilities.DragOverlay.dock.model.OverlayDockRect factoryDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+                net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.FACTORY,
                 x(), y(), Math.round(width * scale), Math.round(height * scale));
         if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring() || context == null) {
             return;
         }
         scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-                net.felix.utilities.DragOverlay.dock.OverlayDockIds.FACTORY, scale);
+                net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.FACTORY, scale);
         Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(factoryDock.x(), factoryDock.y());

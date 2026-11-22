@@ -70,7 +70,7 @@ public class CardsStatuesUtility {
 		
 		// Skaliere das Overlay basierend auf der Config
 		float scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.CARDS,
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.CARDS,
 				CCLiveUtilitiesConfig.HANDLER.instance().cardOverlayScale);
 		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
 		
@@ -114,7 +114,7 @@ public class CardsStatuesUtility {
 		
 		// Skaliere das Overlay basierend auf der Config
 		float scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.STATUES,
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.STATUES,
 				CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayScale);
 		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
 		
@@ -269,8 +269,8 @@ public class CardsStatuesUtility {
 	}
 
 	private static void handleHotkey() {
-		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
-			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(toggleKeyMapping);
+		if (net.felix.utilities.DragOverlay.keybind.DetailKeybindCapture.blocksModHotkeys()) {
+			net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(toggleKeyMapping);
 			return;
 		}
 		// Handle toggle hotkey
@@ -1074,16 +1074,16 @@ public class CardsStatuesUtility {
 		int cardX = screenWidth - config.cardX;
 		int cardY = screenHeight - config.cardY;
 		float cardScale = config.cardOverlayScale <= 0 ? 1.0f : config.cardOverlayScale;
-		net.felix.utilities.DragOverlay.dock.OverlayDockRect cardDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.CARDS, cardX, cardY,
+		net.felix.utilities.DragOverlay.dock.model.OverlayDockRect cardDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.CARDS, cardX, cardY,
 				Math.round(162 * cardScale), Math.round(62 * cardScale));
 		
 		// Statuen-Position (unten rechts, über den Karten)
 		int statueX = screenWidth - config.statueX;
 		int statueY = screenHeight - config.statueY;
 		float statueScale = config.statueOverlayScale <= 0 ? 1.0f : config.statueOverlayScale;
-		net.felix.utilities.DragOverlay.dock.OverlayDockRect statueDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.STATUES, statueX, statueY,
+		net.felix.utilities.DragOverlay.dock.model.OverlayDockRect statueDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.STATUES, statueX, statueY,
 				Math.round(162 * statueScale), Math.round(62 * statueScale));
 		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
 			return;
@@ -1123,7 +1123,7 @@ public class CardsStatuesUtility {
 		
 		// Skaliere den Text basierend auf der Config
 		float scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.CARDS,
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.CARDS,
 				CCLiveUtilitiesConfig.HANDLER.instance().cardOverlayScale);
 		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
 		
@@ -1207,7 +1207,7 @@ public class CardsStatuesUtility {
 		
 		// Skaliere den Text basierend auf der Config
 		float scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.STATUES,
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.STATUES,
 				CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayScale);
 		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
 		

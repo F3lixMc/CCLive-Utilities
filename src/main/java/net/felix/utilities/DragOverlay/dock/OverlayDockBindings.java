@@ -1,5 +1,7 @@
 package net.felix.utilities.DragOverlay.dock;
 
+import net.felix.utilities.DragOverlay.dock.model.OverlayDockIds;
+
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Farmworld.collections.tracker.CollectionTracker;
 

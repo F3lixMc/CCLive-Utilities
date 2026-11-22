@@ -600,14 +600,14 @@ public final class EssenceFarmTracker {
 		if (client == null || client.font == null) {
 			return;
 		}
-		net.felix.utilities.DragOverlay.dock.OverlayDockRect essenceDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.ESSENCE,
+		net.felix.utilities.DragOverlay.dock.model.OverlayDockRect essenceDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.ESSENCE,
 				x(), y(), Math.round(cachedWidth * scale()), Math.round(cachedHeight * scale()));
 		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring() || context == null) {
 			return;
 		}
 		float drawScale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.ESSENCE, scale());
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.ESSENCE, scale());
 		Matrix3x2fStack matrices = context.pose();
 		matrices.pushMatrix();
 		matrices.translate(essenceDock.x(), essenceDock.y());

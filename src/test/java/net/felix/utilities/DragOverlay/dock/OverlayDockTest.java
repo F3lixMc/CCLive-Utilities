@@ -1,5 +1,13 @@
 package net.felix.utilities.DragOverlay.dock;
 
+import net.felix.utilities.DragOverlay.dock.model.OverlayDockIds;
+import net.felix.utilities.DragOverlay.dock.model.OverlayDockLink;
+import net.felix.utilities.DragOverlay.dock.model.OverlayDockRect;
+import net.felix.utilities.DragOverlay.dock.model.OverlayDockSide;
+import net.felix.utilities.DragOverlay.dock.resolve.OverlayDockEngine;
+import net.felix.utilities.DragOverlay.dock.resolve.OverlayDockGraph;
+import net.felix.utilities.DragOverlay.dock.resolve.OverlayDockSnap;
+
 import com.google.gson.Gson;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

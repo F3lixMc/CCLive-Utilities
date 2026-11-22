@@ -182,8 +182,8 @@ public class CoinTrackerUtility {
     }
 
     private static void handleResetKey() {
-        if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
-            net.felix.utilities.DragOverlay.ModHotkeyGate.discard(resetKeyMapping);
+        if (net.felix.utilities.DragOverlay.keybind.DetailKeybindCapture.blocksModHotkeys()) {
+            net.felix.utilities.DragOverlay.keybind.ModHotkeyGate.discard(resetKeyMapping);
             return;
         }
         if (resetKeyMapping != null && resetKeyMapping.consumeClick()) {
@@ -324,8 +324,8 @@ public class CoinTrackerUtility {
         }
 
         int coinHeight = Math.round(getCurrentOverlayHeight() * scale);
-        net.felix.utilities.DragOverlay.dock.OverlayDockRect coinDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-                net.felix.utilities.DragOverlay.dock.OverlayDockIds.COIN,
+        net.felix.utilities.DragOverlay.dock.model.OverlayDockRect coinDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+                net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.COIN,
                 xPosition, yOffset, Math.round(overlayWidth * scale), coinHeight);
         if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
             return;
@@ -333,7 +333,7 @@ public class CoinTrackerUtility {
         xPosition = coinDock.x();
         yOffset = coinDock.y();
         scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-                net.felix.utilities.DragOverlay.dock.OverlayDockIds.COIN, scale);
+                net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.COIN, scale);
         Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(xPosition, yOffset);

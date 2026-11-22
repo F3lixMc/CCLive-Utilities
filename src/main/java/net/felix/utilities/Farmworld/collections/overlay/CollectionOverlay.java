@@ -114,10 +114,10 @@ public final class CollectionOverlay {
 		
 		int lineCount = getCollectionOverlayLineCount();
 		int unscaledWidth = maxWidth + padding * 2;
-		int unscaledHeight = net.felix.utilities.DragOverlay.OverlayInsets.heightForLines(
+		int unscaledHeight = net.felix.utilities.DragOverlay.editor.OverlayInsets.heightForLines(
 				padding, 11, client.font.lineHeight, lineCount);
-		net.felix.utilities.DragOverlay.dock.OverlayDockRect collectionDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.COLLECTION,
+		net.felix.utilities.DragOverlay.dock.model.OverlayDockRect collectionDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.COLLECTION,
 				x, y, Math.round(unscaledWidth * scale), Math.round(unscaledHeight * scale));
 		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
 			return;
@@ -125,7 +125,7 @@ public final class CollectionOverlay {
 		x = collectionDock.x();
 		y = collectionDock.y();
 		scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-				net.felix.utilities.DragOverlay.dock.OverlayDockIds.COLLECTION, scale);
+				net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.COLLECTION, scale);
 		
 		// Use Matrix transformations for scaling
 		org.joml.Matrix3x2fStack matrices = context.pose();
@@ -241,7 +241,7 @@ public final class CollectionOverlay {
 		int padding = 5;
 		net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
 		int fontHeight = client != null && client.font != null ? client.font.lineHeight : 9;
-		return net.felix.utilities.DragOverlay.OverlayInsets.heightForLines(
+		return net.felix.utilities.DragOverlay.editor.OverlayInsets.heightForLines(
 				padding, 11, fontHeight, getCollectionOverlayLineCount());
 	}
 

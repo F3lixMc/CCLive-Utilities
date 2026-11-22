@@ -490,10 +490,7 @@ public class AspectOverlay {
         // Ensure scale is valid
         if (overlayScale <= 0) overlayScale = 1.0f;
         
-        // Position using absolute coordinates from screen edges
-        int screenWidth = client.getWindow().getGuiScaledWidth();
-        int screenHeight = client.getWindow().getGuiScaledHeight();
-        
+
         // Calculate base overlay dimensions dynamically based on content
         int baseOverlayWidth = 210; // Base width in pixels
         
@@ -519,15 +516,15 @@ public class AspectOverlay {
         
         int scaledWidth = (int) (overlayWidth * overlayScale);
         int scaledHeight = (int) (overlayHeight * overlayScale);
-        net.felix.utilities.DragOverlay.dock.OverlayDockRect chatDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
-                net.felix.utilities.DragOverlay.dock.OverlayDockIds.CHAT_ASPECT, overlayX, overlayY, scaledWidth, scaledHeight);
+        net.felix.utilities.DragOverlay.dock.model.OverlayDockRect chatDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+                net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.CHAT_ASPECT, overlayX, overlayY, scaledWidth, scaledHeight);
         if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
             return;
         }
         overlayX = chatDock.x();
         overlayY = chatDock.y();
         overlayScale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
-                net.felix.utilities.DragOverlay.dock.OverlayDockIds.CHAT_ASPECT, overlayScale);
+                net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.CHAT_ASPECT, overlayScale);
         scaledWidth = chatDock.w();
         scaledHeight = chatDock.h();
         int offsetX = 0;
@@ -657,7 +654,7 @@ public class AspectOverlay {
         
         // Position using absolute coordinates from screen edges
         int screenWidth = client.getWindow().getGuiScaledWidth();
-        int screenHeight = client.getWindow().getGuiScaledHeight();
+  
         
         // Calculate base overlay dimensions dynamically based on content
         int baseOverlayWidth = 210; // Base width in pixels
@@ -710,9 +707,9 @@ public class AspectOverlay {
             }
         }
         String aspectDockId = isStarItem
-                ? net.felix.utilities.DragOverlay.dock.OverlayDockIds.STAR_ASPECT
-                : net.felix.utilities.DragOverlay.dock.OverlayDockIds.ASPECT;
-        net.felix.utilities.DragOverlay.dock.OverlayDockRect aspectDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+                ? net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.STAR_ASPECT
+                : net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.ASPECT;
+        net.felix.utilities.DragOverlay.dock.model.OverlayDockRect aspectDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
                 aspectDockId,
                 overlayX, overlayY,
                 (int) (overlayWidth * overlayScale),

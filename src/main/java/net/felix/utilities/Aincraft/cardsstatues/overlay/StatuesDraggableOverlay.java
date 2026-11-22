@@ -30,7 +30,7 @@ public class StatuesDraggableOverlay implements DraggableOverlay {
     
     @Override
     public String dockId() {
-        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.STATUES;
+        return net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.STATUES;
     }
 
     @Override

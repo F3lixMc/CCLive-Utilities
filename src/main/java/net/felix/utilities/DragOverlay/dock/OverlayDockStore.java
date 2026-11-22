@@ -1,5 +1,9 @@
 package net.felix.utilities.DragOverlay.dock;
 
+import net.felix.utilities.DragOverlay.dock.model.OverlayDockIds;
+import net.felix.utilities.DragOverlay.dock.model.OverlayDockLink;
+import net.felix.utilities.DragOverlay.dock.resolve.OverlayDockGraph;
+
 import java.util.ArrayList;
 import java.util.List;
 import net.felix.CCLiveUtilitiesConfig;

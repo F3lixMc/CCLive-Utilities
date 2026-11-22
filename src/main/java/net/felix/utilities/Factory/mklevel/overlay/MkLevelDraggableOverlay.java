@@ -23,7 +23,7 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
     
     @Override
     public String dockId() {
-        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.MK_LEVEL;
+        return net.felix.utilities.DragOverlay.dock.model.OverlayDockIds.MK_LEVEL;
     }
 
     @Override
@@ -102,7 +102,7 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
         
         // Wenn wir im F6-Editor sind, verwende die gecachte Höhe (aus dem letzten Render)
         // Das vermeidet Reflection-Probleme auf dem Server
-        if (client.gui.screen() instanceof net.felix.utilities.DragOverlay.OverlayEditorScreen) {
+        if (client.gui.screen() instanceof net.felix.utilities.DragOverlay.editor.OverlayEditorScreen) {
             int cachedHeight = net.felix.utilities.Factory.mklevel.data.MkLevelState.getMkLevelLastKnownHeight();
             if (cachedHeight > 0) {
                 return cachedHeight;
@@ -112,9 +112,9 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
         net.minecraft.client.gui.screens.Screen screenToCheck = client.gui.screen();
         
         // Wenn wir im F6-Editor sind, versuche auf previousScreen zuzugreifen (Fallback)
-        if (client.gui.screen() instanceof net.felix.utilities.DragOverlay.OverlayEditorScreen) {
+        if (client.gui.screen() instanceof net.felix.utilities.DragOverlay.editor.OverlayEditorScreen) {
             try {
-                java.lang.reflect.Field previousScreenField = net.felix.utilities.DragOverlay.OverlayEditorScreen.class.getDeclaredField("previousScreen");
+                java.lang.reflect.Field previousScreenField = net.felix.utilities.DragOverlay.editor.OverlayEditorScreen.class.getDeclaredField("previousScreen");
                 previousScreenField.setAccessible(true);
                 net.minecraft.client.gui.screens.Screen previousScreen = (net.minecraft.client.gui.screens.Screen) previousScreenField.get(client.gui.screen());
                 
