@@ -67,6 +67,11 @@ public final class EssenceFarmTracker {
 	private static final Pattern WAVE_COMPLETED = Pattern.compile("^\\+\\S+\\s+XP\\s+\\+\\S+\\s+Seelen$");
 	/** Runs starting this soon after entering the level may have missed spawns. */
 	private static final int ENTER_GRACE_TICKS = 40;
+	/**
+	 * How long a run survives after its last mob vanished without a death state. One-hit kills are often
+	 * removed before the client sees them dying; the completion message within this window confirms the wave.
+	 */
+	private static final long PENDING_ABORT_MS = 3000L;
 	private static final long PLAN_INTERVAL_MS = 1000L;
 	private static final int CRYSTAL_MENU_SCAN_INTERVAL = 10;
 	private static final Logger LOGGER = LoggerFactory.getLogger("cclive-utilities");
@@ -83,6 +88,8 @@ public final class EssenceFarmTracker {
 	private static int runWave = -1;
 	private static long lastCompletionAt;
 	private static String lastCompletionText;
+	/** Time the last mob vanished without dying, 0 if none; the run is aborted when no completion follows. */
+	private static long pendingAbortAt;
 	private static int ticksSinceLevelChange;
 
 	// Essences gained since the last bag snapshot, by bag key
@@ -177,6 +184,8 @@ public final class EssenceFarmTracker {
 		if (!runActive) {
 			startRun(ticksSinceLevelChange >= ENTER_GRACE_TICKS && aliveMobs.isEmpty());
 		}
+		// A mob came back into range, so the vanished one did not end the wave.
+		pendingAbortAt = 0L;
 		aliveMobs.put(entity.getId(), type);
 		runSpawns.computeIfAbsent(type, t -> new HashSet<>()).add(entity.getId());
 	}
@@ -189,10 +198,9 @@ public final class EssenceFarmTracker {
 		if (entity instanceof LivingEntity living && (living.isDeadOrDying() || living.getHealth() <= 0)) {
 			countKill(entity.getId(), type);
 		} else if (aliveMobs.isEmpty() && runActive) {
-			// The last mob vanished without dying (waves stopped, or out of range): this run is incomplete,
-			// and the pause must not count as one wave cycle.
-			abortRun();
-			lastCompletionAt = 0L;
+			// The last mob vanished without dying: either a one-hit kill the client never saw dying, or the
+			// waves stopped / went out of range. Decide once the completion message arrives or the window ends.
+			pendingAbortAt = System.currentTimeMillis();
 		}
 		countedKills.remove(entity.getId());
 	}
@@ -237,6 +245,7 @@ public final class EssenceFarmTracker {
 		long cycle = lastCompletionAt > 0 && now - lastCompletionAt < MAX_CYCLE_MS ? now - lastCompletionAt : 0L;
 		lastCompletionAt = now;
 		lastCompletionText = clean;
+		pendingAbortAt = 0L;
 		completions++;
 		// The boss bar still shows the completed wave at this moment.
 		runWave = WaveUtility.getCurrentWave();
@@ -266,6 +275,7 @@ public final class EssenceFarmTracker {
 
 	/** Drops the current run without recording it. */
 	private static void abortRun() {
+		pendingAbortAt = 0L;
 		runActive = false;
 		runComplete = false;
 		runWave = -1;
@@ -286,6 +296,12 @@ public final class EssenceFarmTracker {
 		}
 		if (ticksSinceLevelChange < Integer.MAX_VALUE) {
 			ticksSinceLevelChange++;
+		}
+		if (pendingAbortAt > 0L && System.currentTimeMillis() - pendingAbortAt > PENDING_ABORT_MS) {
+			// No completion followed: this run is incomplete, and the pause must not count as one wave cycle.
+			pendingAbortAt = 0L;
+			abortRun();
+			lastCompletionAt = 0L;
 		}
 		if (isInFactory()) {
 			trackRun(client.level);
