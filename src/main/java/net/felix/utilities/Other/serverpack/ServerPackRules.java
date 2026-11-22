@@ -1,13 +1,12 @@
 package net.felix.utilities.Other.serverpack;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Predicate;
 
 /**
- * Pure rules for the cached PlayLegend server resource pack: file naming, URL filter and
+ * Pure rules for the cached PlayLegend server resource pack: file naming and
  * selection-list edits. Kept free of Minecraft types so it can be unit tested.
  */
 public final class ServerPackRules {
@@ -17,8 +16,6 @@ public final class ServerPackRules {
     public static final String FILE_SUFFIX = ".zip";
     /** Pack ids of {@code FolderRepositorySource} packs start with this. */
     public static final String FILE_PACK_ID_PREFIX = "file/";
-
-    private static final String PLAYLEGEND_HOST = "playlegend.net";
 
     private ServerPackRules() {
     }
@@ -52,23 +49,6 @@ public final class ServerPackRules {
         return packId != null
             && packId.startsWith(FILE_PACK_ID_PREFIX)
             && isCachedFileName(packId.substring(FILE_PACK_ID_PREFIX.length()));
-    }
-
-    /** Only packs hosted on playlegend.net (or a subdomain) are cached. */
-    public static boolean isPlayLegendPackUrl(String url) {
-        if (url == null) {
-            return false;
-        }
-        try {
-            String host = URI.create(url.trim()).getHost();
-            if (host == null) {
-                return false;
-            }
-            host = host.toLowerCase(Locale.ROOT);
-            return host.equals(PLAYLEGEND_HOST) || host.endsWith("." + PLAYLEGEND_HOST);
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
     }
 
     /**

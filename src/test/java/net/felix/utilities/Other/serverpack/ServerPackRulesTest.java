@@ -34,18 +34,6 @@ class ServerPackRulesTest {
     }
 
     @Test
-    void onlyCachesPlayLegendUrls() {
-        assertTrue(ServerPackRules.isPlayLegendPackUrl(
-            "https://s3.playlegend.net/resourcepack/production-system/packs/cactusclicker/pack.zip"));
-        assertTrue(ServerPackRules.isPlayLegendPackUrl("https://PLAYLEGEND.NET/pack.zip"));
-        assertFalse(ServerPackRules.isPlayLegendPackUrl("https://playlegend.net.evil.example/pack.zip"));
-        assertFalse(ServerPackRules.isPlayLegendPackUrl("https://notplaylegend.net/pack.zip"));
-        assertFalse(ServerPackRules.isPlayLegendPackUrl("https://lobfile.com/file/mKFTSygM.zip"));
-        assertFalse(ServerPackRules.isPlayLegendPackUrl("not a url"));
-        assertFalse(ServerPackRules.isPlayLegendPackUrl(null));
-    }
-
-    @Test
     void replacesOldCachedPackBelowServerPacks() {
         String oldId = ServerPackRules.packId(OLD_HASH);
         String newId = ServerPackRules.packId(HASH);

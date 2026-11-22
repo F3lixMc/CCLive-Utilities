@@ -139,7 +139,7 @@ public final class ServerConnectionGate {
         return matchesAllowed(data.ip) ? MatchState.ALLOWED : MatchState.DISALLOWED;
     }
 
-    static boolean matchesAllowed(String address) {
+    public static boolean matchesAllowed(String address) {
         String requested = address.trim().toLowerCase(Locale.ROOT);
         String portSuffix = ":" + ALLOWED_PORT;
         if (requested.endsWith(portSuffix)) {

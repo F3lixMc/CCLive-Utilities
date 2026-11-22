@@ -17,9 +17,13 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientConfigurationConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.mixin.ClientCommonPacketListenerAccess;
+import net.felix.utilities.Other.server.ServerConnectionGate;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket;
 import net.minecraft.network.protocol.common.ServerboundResourcePackPacket;
@@ -31,9 +35,10 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Keeps the PlayLegend server resource pack as a normal resource pack, so it loads together with
- * the other packs at game start. When the server pushes the same pack again, the push is answered
- * as "loaded" without a second resource reload. A new pack version still goes through the vanilla
- * download; afterwards it replaces the cached copy for the next start.
+ * the other packs at game start and stays loaded after leaving. Only connections to
+ * {@code playlegend.net} / {@code beta.playlegend.net} use it: a push of the cached pack is
+ * answered as "loaded" without a reload, joining any other server unloads it. A new pack version
+ * still goes through the vanilla download; afterwards it replaces the cached copy.
  */
 public final class ServerPackCache {
 
@@ -54,6 +59,8 @@ public final class ServerPackCache {
         initialized = true;
         ClientLifecycleEvents.CLIENT_STARTED.register(ServerPackCache::onClientStarted);
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> PENDING.clear());
+        ClientConfigurationConnectionEvents.INIT.register((handler, client) ->
+            onConnect(client, ((ClientCommonPacketListenerAccess) handler).cclive$getServerData()));
     }
 
     private static boolean isEnabled() {
@@ -65,8 +72,8 @@ public final class ServerPackCache {
      *
      * @return true if the cached pack is already active and the push was answered here
      */
-    public static boolean handlePush(Connection connection, ClientboundResourcePackPushPacket packet) {
-        if (!isEnabled() || !ServerPackRules.isPlayLegendPackUrl(packet.url())) {
+    public static boolean handlePush(Connection connection, ServerData server, ClientboundResourcePackPushPacket packet) {
+        if (!isEnabled() || !isPlayLegend(server)) {
             return false;
         }
         String hash = ServerPackRules.normalizeHash(packet.hash());
@@ -74,19 +81,68 @@ public final class ServerPackCache {
             return false;
         }
         Minecraft client = Minecraft.getInstance();
-        boolean active = client.getResourcePackRepository().getSelectedIds().contains(ServerPackRules.packId(hash))
-            && Files.isRegularFile(resourcePackDir(client).resolve(ServerPackRules.fileName(hash)));
-        if (!active) {
-            PENDING.put(packet.id(), hash);
+        UUID id = packet.id();
+        String packId = ServerPackRules.packId(hash);
+        if (!Files.isRegularFile(resourcePackDir(client).resolve(ServerPackRules.fileName(hash)))) {
+            PENDING.put(id, hash);
             LOGGER.info("Server pack {} not cached yet, using the vanilla download", hash);
             return false;
         }
-        UUID id = packet.id();
+        PackRepository repository = client.getResourcePackRepository();
+        if (repository.getSelectedIds().contains(packId)) {
+            sendLoaded(connection, id);
+            LOGGER.info("Server pack {} already active, skipped the reload", hash);
+            return true;
+        }
+        // Cached but unloaded (e.g. after another server): load it once as a normal pack.
+        repository.reload();
+        if (!repository.isAvailable(packId)) {
+            PENDING.put(id, hash);
+            LOGGER.warn("Cached server pack {} not loadable, using the vanilla download", packId);
+            return false;
+        }
+        connection.send(new ServerboundResourcePackPacket(id, ServerboundResourcePackPacket.Action.ACCEPTED));
+        repository.setSelected(ServerPackRules.withCachedPack(
+            new ArrayList<>(repository.getSelectedIds()), packId, candidate -> isFixedTop(repository, candidate)));
+        saveOptions(client, repository);
+        client.reloadResourcePacks().whenComplete((ignored, error) -> {
+            if (error != null) {
+                LOGGER.warn("Reload with cached server pack {} failed", packId, error);
+                connection.send(new ServerboundResourcePackPacket(id, ServerboundResourcePackPacket.Action.FAILED_RELOAD));
+            } else {
+                connection.send(new ServerboundResourcePackPacket(id, ServerboundResourcePackPacket.Action.DOWNLOADED));
+                connection.send(new ServerboundResourcePackPacket(id, ServerboundResourcePackPacket.Action.SUCCESSFULLY_LOADED));
+                LOGGER.info("Loaded cached server pack {}", hash);
+            }
+        });
+        return true;
+    }
+
+    private static void sendLoaded(Connection connection, UUID id) {
         connection.send(new ServerboundResourcePackPacket(id, ServerboundResourcePackPacket.Action.ACCEPTED));
         connection.send(new ServerboundResourcePackPacket(id, ServerboundResourcePackPacket.Action.DOWNLOADED));
         connection.send(new ServerboundResourcePackPacket(id, ServerboundResourcePackPacket.Action.SUCCESSFULLY_LOADED));
-        LOGGER.info("Server pack {} already active, skipped the reload", hash);
-        return true;
+    }
+
+    private static boolean isPlayLegend(ServerData server) {
+        return server != null && server.ip != null && ServerConnectionGate.matchesAllowed(server.ip);
+    }
+
+    /** Joining any other multiplayer server unloads the cached pack; singleplayer keeps it. */
+    private static void onConnect(Minecraft client, ServerData server) {
+        if (server == null || isPlayLegend(server)) {
+            return;
+        }
+        PackRepository repository = client.getResourcePackRepository();
+        List<String> selected = new ArrayList<>(repository.getSelectedIds());
+        List<String> without = ServerPackRules.withoutCachedPacks(selected);
+        if (without.size() == selected.size()) {
+            return;
+        }
+        repository.setSelected(without);
+        saveOptions(client, repository);
+        client.reloadResourcePacks();
+        LOGGER.info("Unloaded cached server pack for {}", server.ip);
     }
 
     /** Called for every outgoing pack status; caches the pack once vanilla has loaded it. */

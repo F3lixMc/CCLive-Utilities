@@ -17,6 +17,7 @@
 		"ChatScreenMixin",
 		"ChatScreenSuggestionsAccess",
 		"ClientPlayNetworkHandlerTestMixin",
+		"ClientCommonPacketListenerAccess",
 		"ServerPackPushMixin",
 		"ServerPackStatusMixin",
 		"PlayerHoverStatsMixin",

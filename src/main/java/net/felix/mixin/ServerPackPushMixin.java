@@ -2,6 +2,7 @@ package net.felix.mixin;
 
 import net.felix.utilities.Other.serverpack.ServerPackCache;
 import net.minecraft.client.multiplayer.ClientCommonPacketListenerImpl;
+import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket;
 import org.spongepowered.asm.mixin.Final;
@@ -16,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class ServerPackPushMixin {
 
     @Shadow @Final protected Connection connection;
+    @Shadow @Final protected ServerData serverData;
 
     // After the thread hop, so the handler runs on the client thread.
     @Inject(
@@ -26,7 +28,7 @@ public abstract class ServerPackPushMixin {
             shift = At.Shift.AFTER),
         cancellable = true)
     private void cclive$skipCachedServerPack(ClientboundResourcePackPushPacket packet, CallbackInfo ci) {
-        if (ServerPackCache.handlePush(connection, packet)) {
+        if (ServerPackCache.handlePush(connection, serverData, packet)) {
             ci.cancel();
         }
     }
