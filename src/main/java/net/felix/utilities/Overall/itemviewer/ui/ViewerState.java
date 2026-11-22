@@ -68,6 +68,9 @@ public final class ViewerState {
     // Gehovertes Item (für Rechtsklick-Handling)
     static ItemData hoveredItemForClick = null;
 
+    /** Linksklick im Grid übernimmt das Item, z. B. bei der Bauplan-Sound-Auswahl. */
+    public static java.util.function.Consumer<ItemData> externalGridPick;
+
     public static boolean isSymbolMenuOpen = false;
 
     public static boolean isSymbolButtonHovered = false;

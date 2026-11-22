@@ -209,6 +209,9 @@ public final class ViewerLayout {
         if (isKitEditorMode()) {
             return resolveKitEditorViewerPosition();
         }
+        if (net.felix.utilities.Overall.itemviewer.ui.ViewerState.externalGridPick != null && client.gui.screen() != null) {
+            return calculateViewerPositionBesideCenteredInventory(client.gui.screen());
+        }
         if (client.gui.screen() == null) {
             return null;
         }

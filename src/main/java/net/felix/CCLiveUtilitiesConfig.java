@@ -18,6 +18,8 @@ import net.felix.utilities.Farmworld.collections.tracker.ResourceTrackerDisplayM
 import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.felix.utilities.Overall.searchbar.ItemDisplayMode;
 import net.felix.utilities.Town.schmied.SchmiedItemDisplayMode;
+import net.felix.utilities.Overall.eventsound.ui.EventSoundListScreen;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -929,12 +931,6 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public Color sternengeschmiedetColor = new Color(0xFF00FF); // Normale Farbe (wenn Regenbogen aus)
-
-    @SerialEntry
-    public boolean starForgedSoundEnabled = true; // Sound bei Sternengeschmiedet-Schmiedezustand im Chat
-
-    @SerialEntry
-    public boolean starForgedSoundDebugging = false; // Debug-Logs für Sternengeschmiedet-Sound
 
     @SerialEntry
     public boolean fragmentDropAnimationEnabled = true; // Totem animation with prismarine shard on fragment drop
@@ -2084,6 +2080,21 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Event-Sounds"))
+                                .option(ButtonOption.createBuilder()
+                                        .name(Component.literal("Event-Sounds"))
+                                        .text(Component.literal("Öffnen"))
+                                        .description(OptionDescription.of(Component.literal(
+                                                "Sounds für Schmiedezustände, Bauplan-Drops und eigene Chat-Nachrichten")))
+                                        .action((screen, button) -> {
+                                            Minecraft client = Minecraft.getInstance();
+                                            if (client != null) {
+                                                client.gui.setScreen(new EventSoundListScreen(screen));
+                                            }
+                                        })
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
                                 .name(Component.literal("Wellen Anzeige"))
                                 .option(Option.<Boolean>createBuilder()
                                         .name(Component.literal("Wellen Anzeige bei Essenzen"))
@@ -2479,14 +2490,6 @@ public class CCLiveUtilitiesConfig {
                                         .binding(true, () -> HANDLER.instance().sternengeschmiedetRainbow, newVal -> HANDLER.instance().sternengeschmiedetRainbow = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Component.literal("Sternengeschmiedet-Sound"))
-                                        .description(OptionDescription.of(Component.literal(
-                                                "Spielt einen Sound ab, wenn die Chat-Nachricht "
-                                                        + "\"[Legend] Schmiedezustand erhalten: [Sternengeschmiedet]\" erscheint")))
-                                        .binding(true, () -> HANDLER.instance().starForgedSoundEnabled, newVal -> HANDLER.instance().starForgedSoundEnabled = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
-                                        .build())
                                 .build())
                         .build())
                 .category(ConfigCategory.createBuilder()
@@ -2804,14 +2807,6 @@ public class CCLiveUtilitiesConfig {
                                 .name(Component.literal("Debug Funktionen"))
                                 .description(OptionDescription.of(Component.literal("Debug Funktionen\n-ItemHoverLogger (F8)\n-InventoryNameLogger (F9)\n-ScoreboardLogger (F10)\n-BossBarLogger (F12)")))
                                 .binding(false, () -> HANDLER.instance().debugFunctionsEnabled, newVal -> HANDLER.instance().debugFunctionsEnabled = newVal)
-                                .controller(TickBoxControllerBuilder::create)
-                                .build())
-                        .option(Option.<Boolean>createBuilder()
-                                .name(Component.literal("Sternengeschmiedet-Sound Debugging"))
-                                .description(OptionDescription.of(Component.literal(
-                                        "Schreibt detaillierte Logs in die Konsole, wenn Chat-Nachrichten "
-                                                + "für den Sternengeschmiedet-Sound verarbeitet werden")))
-                                .binding(false, () -> HANDLER.instance().starForgedSoundDebugging, newVal -> HANDLER.instance().starForgedSoundDebugging = newVal)
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
                         .build())

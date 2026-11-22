@@ -100,7 +100,8 @@ public final class SearchFieldInput {
         }
         boolean canUseSearchInput = client.gui.screen() instanceof AbstractContainerScreen<?>
                 || client.gui.screen() instanceof InventoryScreen
-                || isKitEditorMode();
+                || isKitEditorMode()
+                || net.felix.utilities.Overall.itemviewer.ui.ViewerState.externalGridPick != null;
         if (!canUseSearchInput) {
             setSearchFieldFocused(false);
             return false;
@@ -118,7 +119,9 @@ public final class SearchFieldInput {
      */
     private static boolean focusIfMouseOverSearch(Minecraft client) {
         ViewerPosition pos;
-        if (client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
+        if (net.felix.utilities.Overall.itemviewer.ui.ViewerState.externalGridPick != null) {
+            pos = net.felix.utilities.Overall.itemviewer.ui.ViewerLayout.calculateViewerPositionBesideCenteredInventory(client.gui.screen());
+        } else if (client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
             pos = getOrCalculateViewerPosition(handledScreen, client.gui.screen());
         } else {
             // Für nicht-AbstractContainerScreen Screens (z.B. Spielerinventar)
@@ -277,7 +280,11 @@ public final class SearchFieldInput {
         Minecraft client = Minecraft.getInstance();
         if (!searchFieldFocused || !isVisible() || client == null || client.gui.screen() == null
                 || client.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen) return false;
-        if (!(client.gui.screen() instanceof AbstractContainerScreen<?>) && !isKitEditorMode()) return false;
+        if (!(client.gui.screen() instanceof AbstractContainerScreen<?>)
+                && !isKitEditorMode()
+                && net.felix.utilities.Overall.itemviewer.ui.ViewerState.externalGridPick == null) {
+            return false;
+        }
         if (!searchInputCharacterLogged) {
             SEARCH_INPUT_LOG.info("Viewer search received a character event (allowed={})", event.isAllowedChatCharacter());
             searchInputCharacterLogged = true;

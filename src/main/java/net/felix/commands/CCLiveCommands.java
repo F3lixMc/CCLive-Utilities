@@ -28,7 +28,8 @@ import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesSt
 import net.felix.utilities.Other.devtools.DevToolsAccess;
 import net.felix.utilities.Other.devtools.DevToolsScreen;
 import net.felix.utilities.Other.glyphs.ZeichenUtility;
-import net.felix.utilities.Town.sound.StarForgedSoundUtility;
+import net.felix.utilities.Overall.eventsound.sound.EventSoundPlayer;
+import net.felix.utilities.Overall.eventsound.ui.EventSoundListScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
@@ -141,9 +142,11 @@ public class CCLiveCommands {
                 .then(literal("reset")
                     .executes(CCLiveCommands::resetMaterialsResources)))
             
-            // Sternengeschmiedet Sound Test
-            .then(literal("sternen_sound_test")
-                .executes(CCLiveCommands::testStarForgedSound))
+            .then(literal("eventsound")
+                .then(literal("open")
+                    .executes(CCLiveCommands::openEventSounds))
+                .then(literal("stop")
+                    .executes(CCLiveCommands::stopEventSounds)))
 
             // Fragment drop animation test
             .then(literal("fragment_animation_test")
@@ -329,23 +332,7 @@ public class CCLiveCommands {
         return 1;
     }
 
-    // =================== STERNENGESCHMIEDET SOUND ===================
 
-    private static int testStarForgedSound(CommandContext<FabricClientCommandSource> context) {
-        try {
-            boolean enabled = CCLiveUtilitiesConfig.HANDLER.instance().starForgedSoundEnabled;
-            StarForgedSoundUtility.playTestSound();
-            context.getSource().sendFeedback(Component.literal(
-                    "§aSternengeschmiedet-Sound abgespielt"
-                            + (enabled ? " §7(Einstellung: §aAN§7)" : " §7(Einstellung: §cAUS§7 – Test spielt trotzdem)"))
-            );
-            return 1;
-        } catch (Exception e) {
-            context.getSource().sendError(Component.literal("§cFehler beim Abspielen des Sounds: " + e.getMessage()));
-            return 0;
-        }
-    }
-    
     // =================== LEADERBOARD COMMANDS ===================
     
     /**
@@ -507,6 +494,25 @@ public class CCLiveCommands {
         client.execute(DevToolsScreen::open);
         return 1;
     }
+
+    private static int openEventSounds(CommandContext<FabricClientCommandSource> context) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) {
+            return 0;
+        }
+        client.execute(() -> client.gui.setScreen(new EventSoundListScreen(null)));
+        return 1;
+    }
+
+    private static int stopEventSounds(CommandContext<FabricClientCommandSource> context) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) {
+            return 0;
+        }
+        client.execute(EventSoundPlayer::stopAll);
+        context.getSource().sendFeedback(Component.literal("§aLaufende Event-Sounds gestoppt."));
+        return 1;
+    }
     
     // =================== CHAT COMMANDS ===================
     
@@ -655,7 +661,8 @@ public class CCLiveCommands {
         }
 
         context.getSource().sendFeedback(Component.literal("§e§lSchmied:"));
-        context.getSource().sendFeedback(Component.literal("§7/cclive sternen_sound_test §f- Sternengeschmiedet-Sound testen"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive eventsound open §f- Event-Sound-Menü öffnen"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive eventsound stop §f- Laufende Event-Sounds stoppen"));
         context.getSource().sendFeedback(Component.literal("§7/cclive fragment_animation_test §f- Talismanfragment-Animation testen"));
         context.getSource().sendFeedback(Component.literal(""));
         

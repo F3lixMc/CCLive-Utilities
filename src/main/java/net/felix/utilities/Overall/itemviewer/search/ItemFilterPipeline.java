@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import net.felix.utilities.Overall.itemviewer.data.ItemData;
 import net.felix.utilities.Overall.itemviewer.inventory.FavoriteBlueprintsStore;
@@ -54,6 +55,17 @@ public final class ItemFilterPipeline {
     public static SortMode currentSortMode = SortMode.DEFAULT;
 
     public static int currentPage = 0;
+
+    private static Predicate<ItemData> extraFilter;
+
+    /**
+     * Zusätzlicher Filter, z. B. nur Aincraft-Baupläne während der Sound-Auswahl.
+     * {@code null} hebt ihn auf.
+     */
+    public static void setExtraFilter(Predicate<ItemData> filter) {
+        extraFilter = filter;
+        applyFilters();
+    }
 
     /**
      * Verzögert Filter-Updates beim Tippen, um Lag bei großen Item-Listen zu vermeiden.
@@ -184,6 +196,12 @@ public final class ItemFilterPipeline {
             } else {
                 kitFilterActive = false;
             }
+        }
+
+        if (extraFilter != null) {
+            itemsToFilter = itemsToFilter.stream()
+                    .filter(extraFilter)
+                    .collect(Collectors.toList());
         }
 
         List<ItemData> result;
