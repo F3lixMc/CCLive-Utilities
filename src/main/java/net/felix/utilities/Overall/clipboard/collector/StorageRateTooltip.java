@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialRateUtility;
 import net.felix.utilities.Other.glyphs.ZeichenUtility;
+import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -310,7 +311,24 @@ public final class StorageRateTooltip {
     }
 
     private static String rateSuffix(String rateKey) {
-        return " (" + MaterialRateUtility.formatRate(RATES.rate(rateKey)) + ")";
+        return " (" + MaterialRateUtility.formatRate(RATES.rate(rateKey), displayUnit(rateKey)) + ")";
+    }
+
+    /** Amboss und Ofen haben eine eigene Einheit. Die Zeitrechnung bleibt pro Minute. */
+    private static RateDisplayUnit displayUnit(String rateKey) {
+        if (rateKey == null || !(rateKey.startsWith("anvil\u0000") || rateKey.startsWith("furnace\u0000")
+                || rateKey.startsWith("legend\u0000"))) {
+            return MaterialRateUtility.materialRateUnit();
+        }
+        try {
+            CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+            if (config == null) {
+                return RateDisplayUnit.PER_MINUTE;
+            }
+            return RateDisplayUnit.orDefault(config.ambossOfenRateUnit);
+        } catch (Throwable ignored) {
+            return RateDisplayUnit.PER_MINUTE;
+        }
     }
 
     private static long currentAmount(String line) {

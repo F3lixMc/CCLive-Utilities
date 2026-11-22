@@ -2,10 +2,10 @@ package net.felix.utilities.Overall.clipboard.collector;
 
 import java.util.regex.Pattern;
 
-/** Entfernt ein angehängtes (x/min), damit die Mengen-Zeile weiter gelesen werden kann. */
+/** Entfernt ein angehängtes (x/min) oder (x/h), damit die Mengen-Zeile weiter gelesen werden kann. */
 final class StorageLineText {
 
-    private static final Pattern RATE_SUFFIX = Pattern.compile("\\s*\\([^)]*/min\\)\\s*$");
+    private static final Pattern RATE_SUFFIX = Pattern.compile("\\s*\\([^)]*/(?:min|h)\\)\\s*$");
 
     private StorageLineText() {
     }

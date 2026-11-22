@@ -656,13 +656,17 @@ public class CCLiveUtilitiesConfig {
     public CoinTrackerDisplayMode coinTrackerDisplayMode = CoinTrackerDisplayMode.OVERLAY;
 
 
-    /** X/min im Amboss-Lager, im Sammler und in der Clipboard-Zeit. */
+    /** Rate im Amboss-Lager, im Sammler und in der Clipboard-Zeit. */
     @SerialEntry
     public boolean ambossRateEnabled = false;
 
-    /** X/min im Schmelzofen-Lager, im Sammler und in der Clipboard-Zeit. */
+    /** Rate im Schmelzofen-Lager, im Sammler und in der Clipboard-Zeit. */
     @SerialEntry
     public boolean ofenRateEnabled = false;
+
+    /** Anzeige der Amboss- und Ofen-Rate. Intern bleibt die Rechnung pro Minute. */
+    @SerialEntry
+    public RateDisplayUnit ambossOfenRateUnit = RateDisplayUnit.PER_MINUTE;
 
     // Schmied Tracker Settings
     @SerialEntry
@@ -2361,11 +2365,11 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Component.literal("X/min"))
+                                .name(Component.literal("Amboss/Ofen"))
                                 .option(Option.<Boolean>createBuilder()
                                         .name(Component.literal("Amboss"))
                                         .description(OptionDescription.of(Component.literal(
-                                                "X/min im Amboss anzeigen. Aus blendet die Rate auch im Clipboard aus.")))
+                                                "Rate im Amboss anzeigen. Aus blendet die Rate auch im Clipboard aus.")))
                                         .binding(false,
                                                 () -> HANDLER.instance().ambossRateEnabled,
                                                 newVal -> HANDLER.instance().ambossRateEnabled = newVal)
@@ -2374,12 +2378,16 @@ public class CCLiveUtilitiesConfig {
                                 .option(Option.<Boolean>createBuilder()
                                         .name(Component.literal("Ofen"))
                                         .description(OptionDescription.of(Component.literal(
-                                                "X/min im Schmelzofen anzeigen. Aus blendet die Rate auch im Clipboard aus.")))
+                                                "Rate im Schmelzofen anzeigen. Aus blendet die Rate auch im Clipboard aus.")))
                                         .binding(false,
                                                 () -> HANDLER.instance().ofenRateEnabled,
                                                 newVal -> HANDLER.instance().ofenRateEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
+                                .option(rateUnitOption("Rate-Einheit",
+                                        "Rate-Einheit für Amboss und Ofen (X/min ↔ X/h)",
+                                        () -> HANDLER.instance().ambossOfenRateUnit,
+                                        v -> HANDLER.instance().ambossOfenRateUnit = v))
                                 .build())
                         .group(OptionGroup.createBuilder()
                                 .name(Component.literal("Schmied Tracker"))
