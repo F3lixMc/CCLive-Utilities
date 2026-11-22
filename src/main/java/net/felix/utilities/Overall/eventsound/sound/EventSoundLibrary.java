@@ -22,7 +22,7 @@ import net.minecraft.client.Minecraft;
 public final class EventSoundLibrary {
     public static final String BUNDLED_STARFORGED = "starforged.ogg";
     public static final String BUNDLED_RICK = "Rick.ogg";
-    private static final String BUNDLED_RESOURCE_ROOT = "/assets/cclive-utilities/eventsounds/";
+    private static final String BUNDLED_RESOURCE_ROOT = "/eventsounds/";
     private static final List<String> BUNDLED = List.of(BUNDLED_STARFORGED, BUNDLED_RICK);
 
     private EventSoundLibrary() {
@@ -50,6 +50,7 @@ public final class EventSoundLibrary {
     }
 
     public static List<String> fileNames() {
+        ensureBundled();
         Path directory = EventSoundPaths.files();
         if (!Files.isDirectory(directory)) {
             return List.of();
@@ -71,6 +72,7 @@ public final class EventSoundLibrary {
         if (fileName == null || fileName.isBlank() || fileName.contains("..") || fileName.indexOf('/') >= 0 || fileName.indexOf('\\') >= 0) {
             return null;
         }
+        ensureBundled();
         Path path = EventSoundPaths.files().resolve(fileName);
         return Files.isRegularFile(path) ? path : null;
     }

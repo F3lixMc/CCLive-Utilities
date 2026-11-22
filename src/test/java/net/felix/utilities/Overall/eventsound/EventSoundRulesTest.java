@@ -126,6 +126,7 @@ class EventSoundRulesTest {
     @Test
     void freshInstallIncludesStarforgedEvent() {
         EventSoundStore.load();
+        EventSoundLibrary.ensureBundled();
 
         EventSoundRule rule = EventSoundStore.findSmithing("Sternengeschmiedet").orElseThrow();
         assertEquals("builtin-sternengeschmiedet", rule.id);

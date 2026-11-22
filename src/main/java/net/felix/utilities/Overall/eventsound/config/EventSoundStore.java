@@ -52,7 +52,6 @@ public final class EventSoundStore {
                     builtinVersion = 0;
                 }
             }
-            EventSoundLibrary.ensureBundled();
             if (builtinVersion < BUILTIN_VERSION) {
                 if (RULES.stream().noneMatch(EventSoundStore::isStarforgedRule)) {
                     RULES.add(starforgedRule());
