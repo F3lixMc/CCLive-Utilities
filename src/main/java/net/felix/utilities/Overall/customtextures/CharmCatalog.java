@@ -102,6 +102,8 @@ public final class CharmCatalog {
 	private static final String[] CASE_ENDINGS = { "es", "en", "er", "s", "n", "e" };
 
 	private static final Pattern FRAGMENT_SUFFIX = Pattern.compile("^(.+?)\\s*\\[fragment\\]$");
+	// Crafting menu shows charms as "Anhänger der X [Bauplan]"; they get the charm texture.
+	private static final Pattern BLUEPRINT_SUFFIX = Pattern.compile("^(.+?)\\s*\\[(?:bauplan|blueprint)\\]$");
 	// "Anhänger der X", "Talisman des X". Group 1 = X.
 	private static final Pattern GERMAN_NAME = Pattern.compile(
 			"^(?:.*\\s)?(?:anhänger|talisman)\\s+(?:der|des)\\s+(.+)$");
@@ -129,6 +131,10 @@ public final class CharmCatalog {
 		String name = clean(rawName);
 		if (name.isEmpty() || name.contains("fragment")) {
 			return null;
+		}
+		Matcher blueprint = BLUEPRINT_SUFFIX.matcher(name);
+		if (blueprint.matches()) {
+			name = blueprint.group(1);
 		}
 		return matchFullName(name, false);
 	}

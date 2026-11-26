@@ -50,6 +50,10 @@ class CharmCatalogTest {
 		assertEquals("anvilspeed", charmKey("Anhänger des glühenden Hammers"));
 		assertEquals("vitality", charmKey("Anhänger des Lebens"));
 		assertEquals("health", charmKey("Anhänger der Lebenskraft"));
+		// Crafting menu: exact custom_name parts joined as getString() returns them.
+		assertEquals("essencedropchance", charmKey("Anhänger der Ätherquelle [Bauplan]"));
+		assertEquals("essencedropchance", charmKey("Charm of Aether Source [Blueprint]"));
+		assertNull(fragmentKey("Anhänger der Ätherquelle [Bauplan]"));
 	}
 
 	@Test
