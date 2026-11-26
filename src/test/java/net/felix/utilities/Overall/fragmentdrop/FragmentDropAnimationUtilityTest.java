@@ -17,6 +17,16 @@ class FragmentDropAnimationUtilityTest {
 	}
 
 	@Test
+	void extractsNameFromCurrentFragmentMessage() {
+		assertEquals("Anhänger der Schmiedekammer [Fragment]", FragmentDropAnimationUtility.extractFragmentName(
+				"[20:21] [Legend] Du hast Anhänger der Schmiedekammer [Fragment] gefunden."));
+		assertEquals("Anhänger des Glühenden Hammers [Fragment]", FragmentDropAnimationUtility.extractFragmentName(
+				"§r[Legend] Du hast §dAnhänger des Glühenden Hammers §7[Fragment] §rgefunden."));
+		assertNull(FragmentDropAnimationUtility.extractFragmentName(
+				"Spieler >> [Legend] Du hast Anhänger der Schmiedekammer [Fragment] gefunden."));
+	}
+
+	@Test
 	void rejectsPlayerChatAndOtherMessages() {
 		assertNull(FragmentDropAnimationUtility.extractFragmentName(
 				"Spieler >> [Legend] Du hast Schmiedekammer-Talismanfragment gefunden."));

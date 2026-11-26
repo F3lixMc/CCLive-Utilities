@@ -149,8 +149,19 @@ public class CCLiveCommands {
                     .executes(CCLiveCommands::stopEventSounds)))
 
             // Fragment drop animation test
+            .then(literal("texture_debug")
+                .executes(CCLiveCommands::debugCustomTexture))
             .then(literal("fragment_animation_test")
-                .executes(CCLiveCommands::testFragmentAnimation))
+                .executes(context -> testFragmentAnimation(context, null))
+                .then(argument("charm", StringArgumentType.word())
+                    .suggests((context, builder) -> {
+                        for (net.felix.utilities.Overall.customtextures.CharmCatalog.Charm charm
+                                : net.felix.utilities.Overall.customtextures.CharmCatalog.all()) {
+                            builder.suggest(charm.key());
+                        }
+                        return builder.buildFuture();
+                    })
+                    .executes(context -> testFragmentAnimation(context, StringArgumentType.getString(context, "charm")))))
             
             .then(literal("mod")
                 .requires(source -> StaffClientAccess.isStaffCommandVisible())
@@ -326,9 +337,22 @@ public class CCLiveCommands {
 
     // =================== FRAGMENT DROP ANIMATION ===================
 
-    private static int testFragmentAnimation(CommandContext<FabricClientCommandSource> context) {
-        net.felix.utilities.Overall.fragmentdrop.FragmentDropAnimationUtility.playTestAnimation();
-        context.getSource().sendFeedback(Component.literal("§aTalismanfragment-Animation abgespielt"));
+    /** Explains why the held item does or does not get a custom texture. */
+    private static int debugCustomTexture(CommandContext<FabricClientCommandSource> context) {
+        net.minecraft.world.entity.player.Player player = context.getSource().getPlayer();
+        String info = net.felix.utilities.Overall.customtextures.CustomItemModelUtility.describe(player.getMainHandItem());
+        context.getSource().sendFeedback(Component.literal("§7[Textur-Debug] §f" + info));
+        return 1;
+    }
+
+    private static int testFragmentAnimation(CommandContext<FabricClientCommandSource> context, String charmKey) {
+        // Without an argument a random charm is played.
+        String played = net.felix.utilities.Overall.fragmentdrop.FragmentDropAnimationUtility.playTestAnimation(charmKey);
+        if (played == null) {
+            context.getSource().sendError(Component.literal("§cUnbekannter Anhänger: " + charmKey));
+            return 0;
+        }
+        context.getSource().sendFeedback(Component.literal("§aTalismanfragment-Animation abgespielt: §f" + played));
         return 1;
     }
 
@@ -663,7 +687,7 @@ public class CCLiveCommands {
         context.getSource().sendFeedback(Component.literal("§e§lSchmied:"));
         context.getSource().sendFeedback(Component.literal("§7/cclive eventsound open §f- Event-Sound-Menü öffnen"));
         context.getSource().sendFeedback(Component.literal("§7/cclive eventsound stop §f- Laufende Event-Sounds stoppen"));
-        context.getSource().sendFeedback(Component.literal("§7/cclive fragment_animation_test §f- Talismanfragment-Animation testen"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive fragment_animation_test [anhänger] §f- Talismanfragment-Animation testen"));
         context.getSource().sendFeedback(Component.literal(""));
         
         // Debug Commands nur anzeigen wenn Debug aktiviert ist

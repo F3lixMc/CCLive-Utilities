@@ -961,7 +961,13 @@ public class CCLiveUtilitiesConfig {
     public Color sternengeschmiedetColor = new Color(0xFF00FF); // Normale Farbe (wenn Regenbogen aus)
 
     @SerialEntry
-    public boolean fragmentDropAnimationEnabled = true; // Totem animation with prismarine shard on fragment drop
+    public boolean fragmentDropAnimationEnabled = true; // Custom HUD + particle animation on talisman fragment drop
+
+    @SerialEntry
+    public boolean charmTexturesEnabled = true; // Bundled custom textures for backpack charms and their fragments
+
+    @SerialEntry
+    public boolean powerCrystalTexturesEnabled = true; // Bundled custom textures for power crystals (Machtkristalle)
 
     // Material Tracker Settings
     @SerialEntry
@@ -2189,8 +2195,23 @@ public class CCLiveUtilitiesConfig {
                                 .name(Component.literal("Animations"))
                                 .option(Option.<Boolean>createBuilder()
                                         .name(Component.literal("Talismanfragment Animation"))
-                                        .description(OptionDescription.of(Component.literal("Spielt die Totem-Animation mit einer Prismarinscherbe ab, wenn ein Talismanfragment gefunden wird")))
+                                        .description(OptionDescription.of(Component.literal("Spielt eine Fund-Animation (Lichtstrahlen, Funken, Klang und Partikel) ab, wenn ein Talismanfragment gefunden wird")))
                                         .binding(true, () -> HANDLER.instance().fragmentDropAnimationEnabled, newVal -> HANDLER.instance().fragmentDropAnimationEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Texturen"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Anhänger-Texturen"))
+                                        .description(OptionDescription.of(Component.literal("Eigene Texturen für Rucksack-Anhänger und ihre Fragmente (Inventar, Hand, Boden) und in der Fund-Animation")))
+                                        .binding(true, () -> HANDLER.instance().charmTexturesEnabled, newVal -> HANDLER.instance().charmTexturesEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Machtkristall-Texturen"))
+                                        .description(OptionDescription.of(Component.literal("Eigene Texturen für Machtkristalle")))
+                                        .binding(true, () -> HANDLER.instance().powerCrystalTexturesEnabled, newVal -> HANDLER.instance().powerCrystalTexturesEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())

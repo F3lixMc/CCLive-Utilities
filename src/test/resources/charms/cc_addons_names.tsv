@@ -1,0 +1,187 @@
+# key<TAB>kind<TAB>exact custom_name from cc-addons items/paper.json (2026-11-26)
+anvilcapacity	charm	Anhänger der Schmiedekammer
+anvilcapacity	fragment	Anhänger der Schmiedekammer [Fragment]
+anvilcapacity	charm	Charm of Smithing Chamber
+anvilcapacity	fragment	Charm of Smithing Chamber [Fragment]
+axedamage	charm	Anhänger des Spalters
+axedamage	fragment	Anhänger des Spalters [Fragment]
+axedamage	charm	Charm of Splitter
+axedamage	fragment	Charm of Splitter [Fragment]
+cactusyield	charm	Anhänger der Dornenblüte
+cactusyield	fragment	Anhänger der Dornenblüte [Fragment]
+cactusyield	charm	Charm of Thornbloom
+cactusyield	fragment	Charm of Thornbloom [Fragment]
+arrowdamage	charm	Anhänger der Pfeilspitze
+arrowdamage	fragment	Anhänger der Pfeilspitze [Fragment]
+arrowdamage	charm	Charm of Arrowhead
+arrowdamage	fragment	Charm of Arrowhead [Fragment]
+anvilexperience	charm	Anhänger des Meisterschmieds
+anvilexperience	fragment	Anhänger des Meisterschmieds [Fragment]
+anvilexperience	charm	Charm of Master Smith
+anvilexperience	fragment	Charm of Master Smith [Fragment]
+recyclercapacity	charm	Anhänger der Last
+recyclercapacity	fragment	Anhänger der Last [Fragment]
+recyclercapacity	charm	Charm of Burden
+recyclercapacity	fragment	Charm of Burden [Fragment]
+wastecapacity	charm	Anhänger des Abfalls
+wastecapacity	fragment	Anhänger des Abfalls [Fragment]
+wastecapacity	charm	Charm of Waste
+wastecapacity	fragment	Charm of Waste [Fragment]
+crossbowdamage	charm	Anhänger des Bolzenmeisters
+crossbowdamage	fragment	Anhänger des Bolzenmeisters [Fragment]
+crossbowdamage	charm	Charm of Boltmaster
+crossbowdamage	fragment	Charm of Boltmaster [Fragment]
+characterexperience	charm	Anhänger der Erkenntnis
+characterexperience	fragment	Anhänger der Erkenntnis [Fragment]
+characterexperience	charm	Charm of Insight
+characterexperience	fragment	Charm of Insight [Fragment]
+dexterity	charm	Anhänger der Fingerfertigkeit
+dexterity	fragment	Anhänger der Fingerfertigkeit [Fragment]
+dexterity	charm	Charm of Dexterity
+dexterity	fragment	Charm of Dexterity [Fragment]
+evade	charm	Anhänger des Windschritts
+evade	fragment	Anhänger des Windschritts [Fragment]
+evade	charm	Charm of Windstep
+evade	fragment	Charm of Windstep [Fragment]
+bowdamage	charm	Anhänger des Weitschusses
+bowdamage	fragment	Anhänger des Weitschusses [Fragment]
+bowdamage	charm	Charm of Longshot
+bowdamage	fragment	Charm of Longshot [Fragment]
+criticalhitdamage	charm	Anhänger des Todesstoßes
+criticalhitdamage	fragment	Anhänger des Todesstoßes [Fragment]
+criticalhitdamage	charm	Charm of Deathblow
+criticalhitdamage	fragment	Charm of Deathblow [Fragment]
+defense	charm	Anhänger des Bollwerks
+defense	fragment	Anhänger des Bollwerks [Fragment]
+defense	charm	Charm of Bulwark
+defense	fragment	Charm of Bulwark [Fragment]
+shieldcapacity	charm	Anhänger des Wächters
+shieldcapacity	fragment	Anhänger des Wächters [Fragment]
+shieldcapacity	charm	Charm of Guardian
+shieldcapacity	fragment	Charm of Guardian [Fragment]
+multihit	charm	Anhänger der Mehrfachentreffer
+multihit	fragment	Anhänger der Mehrfachentreffer [Fragment]
+multihit	charm	Anhänger der Mehrfachtreffer
+multihit	fragment	Anhänger der Mehrfachtreffer [Fragment]
+multihit	charm	Charm of Multikill
+multihit	fragment	Charm of Multikill [Fragment]
+coinchance	charm	Anhänger des Goldhorters
+coinchance	fragment	Anhänger des Goldhorters [Fragment]
+coinchance	charm	Charm of Gold Hoarder
+coinchance	fragment	Charm of Gold Hoarder [Fragment]
+anvilspeed	charm	Anhänger des Glühenden Hammers
+anvilspeed	fragment	Anhänger des Glühenden Hammers [Fragment]
+anvilspeed	charm	Charm of Glowing Hammer
+anvilspeed	fragment	Charm of Glowing Hammer [Fragment]
+researchtime	charm	Anhänger der Forschung
+researchtime	fragment	Anhänger der Forschung [Fragment]
+researchtime	charm	Anhänger des Forschers
+researchtime	fragment	Anhänger des Forschers [Fragment]
+researchtime	charm	Charm of Research
+researchtime	fragment	Charm of Research [Fragment]
+sworddamage	charm	Anhänger der Klingenmacht
+sworddamage	fragment	Anhänger der Klingenmacht [Fragment]
+sworddamage	charm	Charm of Blade Power
+sworddamage	fragment	Charm of Blade Power [Fragment]
+smeltingspeed	charm	Anhänger der Schmelzflamme
+smeltingspeed	fragment	Anhänger der Schmelzflamme [Fragment]
+smeltingspeed	charm	Charm of Smoldering Flame
+smeltingspeed	fragment	Charm of Smoldering Flame [Fragment]
+vitality	charm	Anhänger des Lebens
+vitality	fragment	Anhänger des Lebens [Fragment]
+vitality	charm	Charm of Life
+vitality	fragment	Charm of Life [Fragment]
+dropchance	charm	Anhänger des Sammlers
+dropchance	fragment	Anhänger des Sammlers [Fragment]
+dropchance	charm	Charm of Collector
+dropchance	fragment	Charm of Collector [Fragment]
+shieldspeed	charm	Anhänger des Aegis
+shieldspeed	fragment	Anhänger des Aegis [Fragment]
+shieldspeed	charm	Charm of Aegis
+shieldspeed	fragment	Charm of Aegis [Fragment]
+runningspeed	charm	Anhänger des Sturmritts
+runningspeed	fragment	Anhänger des Sturmritts [Fragment]
+runningspeed	charm	Charm of Stormride
+runningspeed	fragment	Charm of Stormride [Fragment]
+essencedropchance	charm	Anhänger der Ätherquelle
+essencedropchance	fragment	Anhänger der Ätherquelle [Fragment]
+essencedropchance	charm	Charm of Aether Source
+essencedropchance	fragment	Charm of Aether Source [Fragment]
+lifesteal	charm	Anhänger des Vampirs
+lifesteal	fragment	Anhänger des Vampirs [Fragment]
+lifesteal	charm	Charm of Vampire
+lifesteal	fragment	Charm of Vampire [Fragment]
+factoryexperience	charm	Anhänger der Industrie
+factoryexperience	fragment	Anhänger der Industrie [Fragment]
+factoryexperience	charm	Charm of Industry
+factoryexperience	fragment	Charm of Industry [Fragment]
+coinamount	charm	Anhänger des Goldsegens
+coinamount	fragment	Anhänger des Goldsegens [Fragment]
+coinamount	charm	Charm of Golden Blessing
+coinamount	fragment	Charm of Golden Blessing [Fragment]
+criticalhitchance	charm	Anhänger des Schicksalsschlags
+criticalhitchance	fragment	Anhänger des Schicksalsschlags [Fragment]
+criticalhitchance	charm	Charm of Fateful Strike
+criticalhitchance	fragment	Charm of Fateful Strike [Fragment]
+furnaceefficiency	charm	Anhänger des Flammenherzens
+furnaceefficiency	fragment	Anhänger des Flammenherzens [Fragment]
+furnaceefficiency	charm	Charm of Flameheart
+furnaceefficiency	fragment	Charm of Flameheart [Fragment]
+bladedamage	charm	Anhänger der Scharfenklinge
+bladedamage	fragment	Anhänger der Scharfenklinge [Fragment]
+bladedamage	charm	Charm of Sharpened Blade
+bladedamage	fragment	Charm of Sharpened Blade [Fragment]
+damage	charm	Anhänger der Vernichtung
+damage	fragment	Anhänger der Vernichtung [Fragment]
+damage	charm	Charm of Destruction
+damage	fragment	Charm of Destruction [Fragment]
+strength	charm	Anhänger der Titanenkraft
+strength	fragment	Anhänger der Titanenkraft [Fragment]
+strength	charm	Charm of Titan's Might
+strength	fragment	Charm of Titan's Might [Fragment]
+health	charm	Anhänger der Lebenskraft
+health	fragment	Anhänger der Lebenskraft [Fragment]
+health	charm	Charm of Vitality
+health	fragment	Charm of Vitality [Fragment]
+furnacecapacity	charm	Anhänger der Endlosen Esse
+furnacecapacity	fragment	Anhänger der Endlosen Esse [Fragment]
+furnacecapacity	charm	Charm of Endless Forge
+furnacecapacity	fragment	Charm of Endless Forge [Fragment]
+soulsyield	charm	Anhänger der Seelenernte
+soulsyield	fragment	Anhänger der Seelenernte [Fragment]
+soulsyield	charm	Charm of Soul Harvest
+soulsyield	fragment	Charm of Soul Harvest [Fragment]
+bossdamage	charm	Anhänger der Urgewalt
+bossdamage	fragment	Anhänger der Urgewalt [Fragment]
+bossdamage	charm	Charm of Primal Force
+bossdamage	fragment	Charm of Primal Force [Fragment]
+lumberjackexperience	charm	Anhänger des Waldhüters
+lumberjackexperience	fragment	Anhänger des Waldhüters [Fragment]
+lumberjackexperience	charm	Charm of Forest Warden
+lumberjackexperience	fragment	Charm of Forest Warden [Fragment]
+lumberjackyieldchance	charm	Anhänger des Holzes
+lumberjackyieldchance	fragment	Anhänger des Holzes [Fragment]
+lumberjackyieldchance	charm	Charm of Wood
+lumberjackyieldchance	fragment	Charm of Wood [Fragment]
+miningexperience	charm	Anhänger des Tiefengräbers
+miningexperience	fragment	Anhänger des Tiefengräbers [Fragment]
+miningexperience	charm	Charm of Deep Digger
+miningexperience	fragment	Charm of Deep Digger [Fragment]
+miningyieldchance	charm	Anhänger des Erzes
+miningyieldchance	fragment	Anhänger des Erzes [Fragment]
+miningyieldchance	charm	Charm of Ore
+miningyieldchance	fragment	Charm of Ore [Fragment]
+fishingexperience	charm	Anhänger des Anglers
+fishingexperience	fragment	Anhänger des Anglers [Fragment]
+fishingexperience	charm	Charm of Fisher
+fishingexperience	fragment	Charm of Fisher [Fragment]
+fishingefficiency	charm	Anhänger der Fischerrei
+fishingefficiency	fragment	Anhänger der Fischerrei [Fragment]
+fishingefficiency	charm	Anhänger der Fischerei
+fishingefficiency	fragment	Anhänger der Fischerei [Fragment]
+fishingefficiency	charm	Charm of Fishing
+fishingefficiency	fragment	Charm of Fishing [Fragment]
+fishingspeed	charm	Anhänger des Köders
+fishingspeed	fragment	Anhänger des Köders [Fragment]
+fishingspeed	charm	Charm of Bait
+fishingspeed	fragment	Charm of Bait [Fragment]

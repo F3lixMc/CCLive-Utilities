@@ -80,6 +80,7 @@ public class CCLiveUtilities implements ModInitializer {
 		KitFilterUtility.initialize();
 		DamageTrackingUtility.initialize();
 		net.felix.utilities.Aincraft.cointracker.CoinTrackerUtility.initialize();
+		net.felix.utilities.Overall.fragmentdrop.FragmentDropAnimationUtility.initialize();
 		NpcAlertsFeature.initialize();
 		net.felix.utilities.Other.debug.DebugUtility.initializeItemLogger();
 		net.felix.utilities.Overall.clipboard.ClipboardUtility.initialize();
