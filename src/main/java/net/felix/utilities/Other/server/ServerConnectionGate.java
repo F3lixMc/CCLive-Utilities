@@ -12,6 +12,7 @@ import net.minecraft.client.multiplayer.ServerData;
  *
  * <ul>
  *   <li>Erlaubt: Verbindung zu {@code playlegend.net:25565} oder {@code beta.playlegend.net:25565} (same proxy)</li>
+ *   <li>Dev/stage servers {@code dev.playlegend.net}, {@code stage.playlegend.net} (port 25565): features on, data uploads off</li>
  *   <li>Dev-Umgebung: Features und Uploads erlaubt, auch in einer Singleplayer-Welt</li>
  *   <li>Bypass-Spieler (firestarter03, F3lixMc_): Features immer an;
  *       Uploads nur auf erlaubtem Server. Unbekannte/nicht erkannte IP → Features an, keine Uploads</li>
@@ -23,6 +24,8 @@ public final class ServerConnectionGate {
     public enum MatchState {
         /** Erkannter PlayLegend-Proxy. */
         ALLOWED,
+        /** PlayLegend dev server: local features allowed, no data uploads to the backend. */
+        FEATURES_ONLY,
         /** Adresse nicht ermittelbar / unklar. */
         UNKNOWN,
         /** Klar anderer Server (oder Singleplayer). */
@@ -31,6 +34,8 @@ public final class ServerConnectionGate {
 
     /** Both names reach the same PlayLegend proxy. */
     private static final Set<String> ALLOWED_HOSTS = Set.of("playlegend.net", "beta.playlegend.net");
+    /** Hosts where features run but nothing is uploaded (test data must not reach the backend). */
+    private static final Set<String> FEATURES_ONLY_HOSTS = Set.of("dev.playlegend.net", "stage.playlegend.net");
     private static final int ALLOWED_PORT = 25565;
 
     private static final Set<String> BYPASS_PLAYERS = Set.of(
@@ -103,7 +108,7 @@ public final class ServerConnectionGate {
         if (isBypassPlayer(client)) {
             return true;
         }
-        return cachedState == MatchState.ALLOWED;
+        return cachedState == MatchState.ALLOWED || cachedState == MatchState.FEATURES_ONLY;
     }
 
     /** Register, Uploads, Chat-WS Auth-pflichtige Sends, Shares. In der Dev-Umgebung auch Singleplayer. */
@@ -136,15 +141,27 @@ public final class ServerConnectionGate {
         }
 
         cachedRawAddress = data.ip;
-        return matchesAllowed(data.ip) ? MatchState.ALLOWED : MatchState.DISALLOWED;
+        return classify(data.ip);
+    }
+
+    static MatchState classify(String address) {
+        if (matchesAllowed(address)) {
+            return MatchState.ALLOWED;
+        }
+        return FEATURES_ONLY_HOSTS.contains(normalizeHost(address)) ? MatchState.FEATURES_ONLY : MatchState.DISALLOWED;
     }
 
     static boolean matchesAllowed(String address) {
+        return ALLOWED_HOSTS.contains(normalizeHost(address));
+    }
+
+    /** Lowercase host without the default port; other ports stay attached and never match. */
+    private static String normalizeHost(String address) {
         String requested = address.trim().toLowerCase(Locale.ROOT);
         String portSuffix = ":" + ALLOWED_PORT;
         if (requested.endsWith(portSuffix)) {
             requested = requested.substring(0, requested.length() - portSuffix.length());
         }
-        return ALLOWED_HOSTS.contains(requested);
+        return requested;
     }
 }
