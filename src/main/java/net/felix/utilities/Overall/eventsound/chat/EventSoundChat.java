@@ -38,6 +38,11 @@ public final class EventSoundChat {
             return;
         }
         String smithing = player ? null : EventSoundMatcher.smithingState(normalized);
+        // The starforged animation brings its own sounds, so its event sound stays silent while it is enabled.
+        if ("Sternengeschmiedet".equals(smithing)
+                && net.felix.utilities.Overall.starforged.StarforgedAnimationUtility.isAnimationEnabled()) {
+            smithing = null;
+        }
         String blueprint = player ? null : EventSoundMatcher.blueprintName(normalized);
         long now = System.currentTimeMillis();
         for (EventSoundRule rule : EventSoundStore.rules()) {

@@ -83,6 +83,7 @@ public class CCLiveUtilities implements ModInitializer {
 		NpcAlertsFeature.initialize();
 		net.felix.utilities.Other.debug.DebugUtility.initializeItemLogger();
 		net.felix.utilities.Overall.clipboard.ClipboardUtility.initialize();
+		net.felix.utilities.Overall.starforged.StarforgedAnimationUtility.initialize();
 		// Offene Spieler-Resets vor den ersten Fortschritts-Uploads abschließen
 		PlayerFullReset.initialize();
 		// Initialisiere Leaderboard-System

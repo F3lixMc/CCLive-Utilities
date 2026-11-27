@@ -40,6 +40,7 @@ public abstract class ClientPlayNetworkHandlerTestMixin {
         if (packet != null) {
             EventSoundChat.handleIncomingMessage(packet.content(), packet.overlay());
             net.felix.utilities.Overall.fragmentdrop.FragmentDropAnimationUtility.handleIncomingMessage(packet.content(), packet.overlay());
+            net.felix.utilities.Overall.starforged.StarforgedAnimationUtility.handleIncomingMessage(packet.content(), packet.overlay());
         }
 
         if (packet == null) {

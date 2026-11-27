@@ -29,7 +29,10 @@
 		"HelpOverlayScreenMixin",
 		"InGameHudHelpOverlayMixin",
 		"InGameHudScoreboardMixin",
-		"MouseClickMixin"
+		"MouseClickMixin",
+		"StarforgedSlotClickMixin",
+		"StarforgedMouseInputMixin",
+		"StarforgedKeyboardInputMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
