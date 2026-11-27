@@ -23,8 +23,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemLore;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Plays a big celebration when the smith grants the very rare smithing state "Sternengeschmiedet", i.e. on
@@ -36,7 +34,6 @@ import org.slf4j.LoggerFactory;
 public final class StarforgedAnimationUtility {
 
 	private static final long DUPLICATE_COOLDOWN_MS = 1500L;
-	private static final Logger LOGGER = LoggerFactory.getLogger("CCLive-Utilities/Starforged");
 	private static final String STARFORGED = "Sternengeschmiedet";
 
 	// In-world timings in client ticks (50 ms); IMPACT_TICK matches StarforgedOverlay.IMPACT (2000 ms).
@@ -88,12 +85,6 @@ public final class StarforgedAnimationUtility {
 			return;
 		}
 		String raw = message.getString();
-		boolean mentionsStarforged = raw.contains("Sternengeschmiedet") || raw.contains("Sterngeschmiedet");
-		if (mentionsStarforged) {
-			LOGGER.info("[Starforged] message: '{}' enabled={} runtime={} matched={}", raw.replace("\n", "\\n"),
-					CCLiveUtilitiesConfig.HANDLER.instance().starforgedAnimationEnabled,
-					CCLiveUtilitiesConfig.isModRuntimeEnabled(), isStarforgedMessage(raw));
-		}
 		if (!isAnimationEnabled()) {
 			return;
 		}
@@ -119,7 +110,6 @@ public final class StarforgedAnimationUtility {
 			return;
 		}
 		lastTriggeredAtMs = now;
-		LOGGER.info("[Starforged] smithing state detected, starting animation");
 		client.execute(() -> {
 			closeContainerScreen(client);
 			playAnimation(visualForCraft(now), true);
@@ -134,13 +124,7 @@ public final class StarforgedAnimationUtility {
 		if (stack == null || stack.isEmpty() || screenTitle == null) {
 			return;
 		}
-		String title = screenTitle.getString();
-		if (!StarforgedCraftTracker.isBlueprintInventory(title)) {
-			// Diagnostics: log clicks only for titles that look like a blueprint inventory.
-			if (title.contains("Bau") || title.contains("Blueprint") || title.contains("Favorisiert")) {
-				LOGGER.info("[Starforged] click ignored, title not matched: '{}' item='{}'", title,
-						stack.getHoverName().getString());
-			}
+		if (!StarforgedCraftTracker.isBlueprintInventory(screenTitle.getString())) {
 			return;
 		}
 		ItemLore lore = stack.get(DataComponents.LORE);
@@ -151,24 +135,14 @@ public final class StarforgedAnimationUtility {
 			}
 		}
 		if (!StarforgedCraftTracker.isCraftAction(lines)) {
-			LOGGER.info("[Starforged] click ignored, no craft action: item='{}' batch={} lore={}",
-					stack.getHoverName().getString(), batch, lines);
 			return;
 		}
-		LOGGER.info("[Starforged] craft click recorded: item='{}' batch={}", stack.getHoverName().getString(), batch);
 		if (batch) {
 			lastBatchItem = stack.copy();
 			lastBatchAtMs = System.currentTimeMillis();
 		} else {
 			lastSingleItem = stack.copy();
 			lastSingleAtMs = System.currentTimeMillis();
-		}
-	}
-
-	/** Diagnostics for clicks in a blueprint inventory that are neither left click nor shift + left click. */
-	public static void logFilteredClick(Component screenTitle, int button, String input) {
-		if (screenTitle != null && StarforgedCraftTracker.isBlueprintInventory(screenTitle.getString())) {
-			LOGGER.info("[Starforged] click filtered: button={} input={}", button, input);
 		}
 	}
 
@@ -196,9 +170,6 @@ public final class StarforgedAnimationUtility {
 
 	/** Skips the running animation (Escape) and gives the input back. */
 	public static void cancelAnimation() {
-		if (StarforgedOverlay.isRunning()) {
-			LOGGER.info("[Starforged] animation cancelled");
-		}
 		StarforgedOverlay.stop();
 		worldTick = -1;
 		blockInput = false;
@@ -236,7 +207,6 @@ public final class StarforgedAnimationUtility {
 			if (icon == null) {
 				icon = matching(batch, chatName);
 			}
-			LOGGER.info("[Starforged] visual from chat name '{}', icon matched={}", chatName, icon != null);
 			return new StarforgedOverlay.Visual(icon == null ? null : icon.copy(), Component.literal(chatName));
 		}
 		ItemStack clicked;
@@ -246,8 +216,6 @@ public final class StarforgedAnimationUtility {
 			// No craft message seen: take the most recent click of either kind.
 			clicked = batch != null && (single == null || lastBatchAtMs >= lastSingleAtMs) ? batch : single;
 		}
-		LOGGER.info("[Starforged] visual: craftWasBatch={} single={} batch={} chosen={}",
-				StarforgedCraftTracker.recentCraftWasBatch(nowMs), describe(single), describe(batch), describe(clicked));
 		if (clicked != null) {
 			Component hover = clicked.getHoverName();
 			Component name = Component.literal(StarforgedCraftTracker.itemName(hover.getString()))
@@ -255,10 +223,6 @@ public final class StarforgedAnimationUtility {
 			return new StarforgedOverlay.Visual(clicked.copy(), name);
 		}
 		return new StarforgedOverlay.Visual(null, null);
-	}
-
-	private static String describe(ItemStack stack) {
-		return stack == null ? "none" : "'" + stack.getHoverName().getString() + "'";
 	}
 
 	private static ItemStack recent(ItemStack stack, long atMs, long nowMs) {
@@ -281,7 +245,6 @@ public final class StarforgedAnimationUtility {
 	private static void playAnimation(StarforgedOverlay.Visual visual, boolean lockInput) {
 		Minecraft client = Minecraft.getInstance();
 		if (client == null || client.player == null || client.level == null) {
-			LOGGER.info("[Starforged] animation skipped: no player or level");
 			return;
 		}
 		StarforgedOverlay.start(visual);
@@ -299,7 +262,6 @@ public final class StarforgedAnimationUtility {
 		// Polled as well as handled in StarforgedKeyboardInputMixin: other mods (e.g. LabyMod) may consume
 		// the Escape key event before KeyboardHandler.keyPress sees it.
 		if (isInputBlocked() && InputConstants.isKeyDown(InputConstants.KEY_ESCAPE)) {
-			LOGGER.info("[Starforged] animation skipped with Escape");
 			cancelAnimation();
 			if (client.gui.screen() instanceof PauseScreen) {
 				client.gui.setScreen(null);

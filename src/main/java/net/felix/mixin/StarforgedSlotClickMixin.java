@@ -27,9 +27,6 @@ public class StarforgedSlotClickMixin {
         if (slot != null && button == 0 && (input == ContainerInput.PICKUP || input == ContainerInput.QUICK_MOVE)) {
             AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
             StarforgedAnimationUtility.onSlotClicked(screen.getTitle(), slot.getItem(), input == ContainerInput.QUICK_MOVE);
-        } else if (slot != null) {
-            AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
-            StarforgedAnimationUtility.logFilteredClick(screen.getTitle(), button, String.valueOf(input));
         }
     }
 }
