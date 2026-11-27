@@ -151,6 +151,13 @@ public class CCLiveCommands {
             // Fragment drop animation test
             .then(literal("fragment_animation_test")
                 .executes(CCLiveCommands::testFragmentAnimation))
+
+            // Starforged animation test (shows the held item)
+            .then(literal("starforged_animation_test")
+                .executes(CCLiveCommands::testStarforgedAnimation)
+                // Feeds the real chat messages through the detection (uses the last clicked blueprint)
+                .then(literal("chat")
+                    .executes(CCLiveCommands::testStarforgedChat)))
             
             .then(literal("mod")
                 .requires(source -> StaffClientAccess.isStaffCommandVisible())
@@ -329,6 +336,17 @@ public class CCLiveCommands {
     private static int testFragmentAnimation(CommandContext<FabricClientCommandSource> context) {
         net.felix.utilities.Overall.fragmentdrop.FragmentDropAnimationUtility.playTestAnimation();
         context.getSource().sendFeedback(Component.literal("§aTalismanfragment-Animation abgespielt"));
+        return 1;
+    }
+
+    private static int testStarforgedChat(CommandContext<FabricClientCommandSource> context) {
+        net.felix.utilities.Overall.starforged.StarforgedAnimationUtility.simulateBatchCraftMessages();
+        return 1;
+    }
+
+    private static int testStarforgedAnimation(CommandContext<FabricClientCommandSource> context) {
+        net.felix.utilities.Overall.starforged.StarforgedAnimationUtility.playTestAnimation();
+        context.getSource().sendFeedback(Component.literal("§dSternengeschmiedet-Animation abgespielt"));
         return 1;
     }
 
@@ -664,6 +682,8 @@ public class CCLiveCommands {
         context.getSource().sendFeedback(Component.literal("§7/cclive eventsound open §f- Event-Sound-Menü öffnen"));
         context.getSource().sendFeedback(Component.literal("§7/cclive eventsound stop §f- Laufende Event-Sounds stoppen"));
         context.getSource().sendFeedback(Component.literal("§7/cclive fragment_animation_test §f- Talismanfragment-Animation testen"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive starforged_animation_test §f- Sternengeschmiedet-Animation testen (zeigt das Item in der Hand)"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive starforged_animation_test chat §f- Simuliert 10x-Craft + Sternengeschmiedet im Chat"));
         context.getSource().sendFeedback(Component.literal(""));
         
         // Debug Commands nur anzeigen wenn Debug aktiviert ist
